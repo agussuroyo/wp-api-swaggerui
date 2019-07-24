@@ -1,13 +1,20 @@
 <?php
-/*
-  Plugin Name: WP API Swagger UI
-  Plugin URI: https://netpoint.group/
-  Description: WordPress REST API with Swagger UI
-  Version: 1.0.0
-  Author: Agus Suroyo
-  Author URI: https://netpoint.group/
+/**
+ * WP API SwaggerUI
+ *
+ * @package     PluginPackage
+ * @author      Your Name
+ * @copyright   2019 Your Name or Company Name
+ * @license     GPL-2.0-or-later
+ *
+ * @wordpress-plugin
+ * Plugin Name: WP API SwaggerUI
+ * Description: WordPress REST API with Swagger UI.
+ * Version:     1.0.0
+ * Author:      Agus Suroyo
+ * License:     GPL v2 or later
+ * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
  */
-
 global $wp_version;
 
 if ( version_compare( PHP_VERSION, '5.4', '<' ) || version_compare( $wp_version, '4.7', '<' ) ) {
