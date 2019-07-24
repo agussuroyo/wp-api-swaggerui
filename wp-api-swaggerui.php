@@ -8,6 +8,12 @@
   Author URI: https://netpoint.group/
  */
 
+global $wp_version;
+
+if ( version_compare( PHP_VERSION, '5.4', '<' ) || version_compare( $wp_version, '4.7', '<' ) ) {
+	return;
+}
+
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'swaggerbag.php';
 
 if ( is_admin() ) {
