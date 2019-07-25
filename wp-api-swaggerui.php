@@ -260,15 +260,17 @@ class WP_API_SwaggerUI {
 	public function buildParameters( $endpoint, $arg ) {
 		$parameters = [];
 
-		foreach ( $arg['args'] as $param => $detail ) {
-			foreach ( $arg['methods'] as $method => $bool ) {
-				$mtd = mb_strtolower( $method );
+		if ( isset( $arg['args'] ) ) {
+			foreach ( $arg['args'] as $param => $detail ) {
+				foreach ( $arg['methods'] as $method => $bool ) {
+					$mtd = mb_strtolower( $method );
 
-				if ( ! isset( $parameters[$mtd] ) ) {
-					$parameters[$mtd] = [];
+					if ( ! isset( $parameters[$mtd] ) ) {
+						$parameters[$mtd] = [];
+					}
+
+					$parameters[$mtd][] = $this->buildParams( $param, $mtd, $endpoint, $detail );
 				}
-
-				$parameters[$mtd][] = $this->buildParams( $param, $mtd, $endpoint, $detail );
 			}
 		}
 
