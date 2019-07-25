@@ -145,8 +145,9 @@ class WP_API_SwaggerUI {
 			$parameters = $this->buildParameters( $endpoint, $arg );
 
 			foreach ( $arg['methods'] as $method => $bool ) {
-				$mtd	 = mb_strtolower( $method );
-				$conf	 = array(
+				$mtd			 = mb_strtolower( $method );
+				$methodEndpoint	 = $mtd . str_replace( '/', '_', $endpoint );
+				$conf			 = array(
 					'tags'			 => array( 'endpoint' ),
 					'summary'		 => '',
 					'description'	 => '',
@@ -160,11 +161,7 @@ class WP_API_SwaggerUI {
 					),
 					'parameters'	 => isset( $parameters[$mtd] ) ? $parameters[$mtd] : [],
 					'security'		 => $this->getSecurity(),
-					'responses'		 => [
-						'200'	 => [ 'description' => 'OK' ],
-						'404'	 => [ 'description' => 'Not Found' ],
-						'400'	 => [ 'description' => 'Bad Request' ],
-					]
+					'responses'		 => $this->getResponses( $methodEndpoint )
 				);
 				if ( $arg['accept_json'] ) {
 					$conf['consumes'][] = [ 'application/json' ];
@@ -292,6 +289,14 @@ class WP_API_SwaggerUI {
 		}
 
 		return $securities;
+	}
+
+	public function getResponses( $methodEndpoint ) {
+		return apply_filters( 'swagger_api_responses_' . $methodEndpoint, array(
+			'200'	 => [ 'description' => 'OK' ],
+			'404'	 => [ 'description' => 'Not Found' ],
+			'400'	 => [ 'description' => 'Bad Request' ]
+				) );
 	}
 
 	public function securityDefinitions() {
