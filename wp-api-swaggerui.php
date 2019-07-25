@@ -22,6 +22,7 @@ if ( version_compare( PHP_VERSION, '5.4', '<' ) || version_compare( $wp_version,
 }
 
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'swaggerbag.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'swaggerauth.php';
 
 if ( is_admin() ) {
 	require_once __DIR__ . DIRECTORY_SEPARATOR . 'swaggersetting.php';
