@@ -1,5 +1,9 @@
 # SwaggerUI for WordPress REST API
 
+[![Build Status](https://travis-ci.com/jonyextenz/wp-api-swaggerui.svg?branch=master)](https://travis-ci.com/jonyextenz/wp-api-swaggerui)
+
+**Descriptions**
+
 This plugin used to display SwaggerUI on WordPress installation by accessing:
 
   - http://example.com/rest-api/docs/
