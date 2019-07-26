@@ -93,13 +93,17 @@ class WP_API_SwaggerUI {
 		return $schemes;
 	}
 
-	public function getNameSpace() {
+	public static function getNameSpace() {
 		return '/' . trim( get_option( 'swagger_api_basepath', '/wp/v2' ), '/' );
+	}
+
+	public static function getCLeanNameSpace() {
+		return trim( self::getNameSpace(), '/' );
 	}
 
 	public function getRawPaths() {
 		$routes		 = rest_get_server()->get_routes();
-		$basepath	 = $this->getNameSpace();
+		$basepath	 = self::getNameSpace();
 		$length		 = strlen( $basepath );
 
 		$raw_paths = [];

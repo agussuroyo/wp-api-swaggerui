@@ -11,7 +11,7 @@
 							<?php
 							foreach ( $namespaces as $namespace ) {
 								?>
-								<option value="<?php echo esc_attr( $namespace ); ?>" <?php selected( $namespace, $swagger_api_basepath ) ?>><?php echo $namespace; ?></option>
+								<option value="<?php echo esc_attr( $namespace ); ?>" <?php selected( $namespace, $swagger_api_basepath ) ?>><?php echo esc_html( $namespace ); ?></option>
 								<?php
 							}
 							?>

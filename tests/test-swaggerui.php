@@ -33,7 +33,7 @@ class TestSwaggerUI extends WP_UnitTestCase {
 	}
 
 	public function test_getNameSpace() {
-		$namespace = $this->ui->getNameSpace();
+		$namespace = WP_API_SwaggerUI::getNameSpace();
 
 		$this->assertEquals( '/wp/v2', $namespace );
 	}
