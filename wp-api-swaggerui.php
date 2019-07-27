@@ -23,6 +23,7 @@ if ( version_compare( PHP_VERSION, '5.4', '<' ) || version_compare( $wp_version,
 
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'swaggerbag.php';
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'swaggerauth.php';
+require_once __DIR__ . DIRECTORY_SEPARATOR . 'swaggertemplate.php';
 
 if ( is_admin() ) {
 	require_once __DIR__ . DIRECTORY_SEPARATOR . 'swaggersetting.php';
@@ -35,13 +36,6 @@ class WP_API_SwaggerUI {
 		add_rewrite_tag( '%swagger_api%', '([^&]+)' );
 		add_rewrite_rule( '^' . $base . '/docs/?', 'index.php?swagger_api=docs', 'top' );
 		add_rewrite_rule( '^' . $base . '/schema/?', 'index.php?swagger_api=schema', 'top' );
-	}
-
-	public function view( $template ) {
-		if ( get_query_var( 'swagger_api' ) === 'docs' ) {
-			$template = __DIR__ . DIRECTORY_SEPARATOR . 'template/swagger/index.php';
-		}
-		return $template;
 	}
 
 	public static function rewriteBaseApi() {
@@ -122,7 +116,7 @@ class WP_API_SwaggerUI {
 		$paths = [];
 
 		foreach ( $raw as $endpoint => $args ) {
-			$ep			 = $this->convertEndpoint( $endpoint );
+			$ep		 = $this->convertEndpoint( $endpoint );
 			$paths[$ep]	 = $this->getMethodsFromArgs( $ep, $args );
 		}
 
@@ -332,5 +326,4 @@ $swagerui = new WP_API_SwaggerUI();
 register_activation_hook( __FILE__, [ $swagerui, 'flushActivate' ] );
 register_deactivation_hook( __FILE__, [ $swagerui, 'flushDeactivate' ] );
 add_action( 'init', [ $swagerui, 'routes' ] );
-add_action( 'template_include', [ $swagerui, 'view' ] );
 add_action( 'wp', [ $swagerui, 'swagger' ] );
