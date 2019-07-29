@@ -2,9 +2,9 @@
 /**
  * WP API SwaggerUI
  *
- * @package     PluginPackage
- * @author      Your Name
- * @copyright   2019 Your Name or Company Name
+ * @package     WP API SwaggerUI
+ * @author      Agus Suroyo
+ * @copyright   2019 Agus Suroyo
  * @license     GPL-2.0-or-later
  *
  * @wordpress-plugin
