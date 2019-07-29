@@ -29,6 +29,11 @@ This plugin can be installed directly from your site.
 3. Locate the WP API SwaggerUI plugin in the list of search results and click Install Now.
 4. Once installed, click the Activate link.
 
+== Screenshots ==
+
+1. SwaggerUI Interface
+2. Options to choose namespace Rest API
+
 == Changelog ==
 
 = 1.0 =
