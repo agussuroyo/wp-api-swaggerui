@@ -13,18 +13,28 @@ class SwaggerTemplate {
 	if ( get_query_var( 'swagger_api' ) === 'docs' ) {
 	    // Remove all default styles.
 	    global $wp_styles;
+	    $style_whitelist = [ 'admin-bar', 'dashicons' ];
 
-	    foreach ( $wp_styles->registered as $handle => $data ) {
-		wp_deregister_style( $handle );
-		wp_dequeue_style( $handle );
+	    if ( isset( $wp_styles->registered ) ) {
+		foreach ( $wp_styles->registered as $handle => $data ) {
+		    if ( ! in_array( $handle, $style_whitelist ) ) {
+			wp_deregister_style( $handle );
+			wp_dequeue_style( $handle );
+		    }
+		}
 	    }
 
 	    // Remove all default scripts;
 	    global $wp_scripts;
+	    $script_whitelist = [ 'admin-bar' ];
 
-	    foreach ( $wp_scripts->registered as $handle => $data ) {
-		wp_deregister_script( $handle );
-		wp_dequeue_style( $handle );
+	    if ( isset( $wp_scripts->registered ) ) {
+		foreach ( $wp_scripts->registered as $handle => $data ) {
+		    if ( ! in_array( $handle, $script_whitelist ) ) {
+			wp_deregister_script( $handle );
+			wp_dequeue_style( $handle );
+		    }
+		}
 	    }
 	}
     }
