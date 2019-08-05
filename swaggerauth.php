@@ -14,9 +14,10 @@ class SwaggerAuth {
 
 		// Check that we're trying to authenticate
 		if ( ! $server->has( 'PHP_AUTH_USER' ) ) {
-
-			if ( $server->has( 'REDIRECT_HTTP_AUTHORIZATION' ) ) {
-				list($username, $password) = explode( ':', base64_decode( substr( $server->get( 'REDIRECT_HTTP_AUTHORIZATION' ), 6 ) ) );
+			
+			$user_pass = $server->get( 'REDIRECT_HTTP_AUTHORIZATION' );
+			if ( $server->has( 'REDIRECT_HTTP_AUTHORIZATION' ) && ! empty( $user_pass )  ) {
+				list($username, $password) = explode( ':', base64_decode( substr( $user_pass, 6 ) ) );
 				$server->set( 'PHP_AUTH_USER', $username );
 				$server->set( 'PHP_AUTH_PW', $password );
 			} else {
