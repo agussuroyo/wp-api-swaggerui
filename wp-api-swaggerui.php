@@ -10,7 +10,7 @@
  * @wordpress-plugin
  * Plugin Name: WP API SwaggerUI
  * Description: WordPress REST API with Swagger UI.
- * Version:     1.0.1
+ * Version:     1.0.2
  * Author:      Agus Suroyo
  * License:     GPL v2 or later
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
