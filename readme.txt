@@ -1,6 +1,6 @@
 === WP API SwaggerUI ===
 Contributors: agussuroyo
-Tags: swaggerui, wp swaggerui, wp rest api, wp swagger rest api, swaggerui rest api, swagger rest api, wp swagger
+Tags: swaggerui, wp swaggerui, wp rest api, wp swagger rest api, swaggerui rest api, swagger rest api, wp swagger, api, swagger, rest api
 Requires at least: 4.7
 Tested up to: 5.2.2
 Stable tag: 1.0
