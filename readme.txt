@@ -3,7 +3,7 @@ Contributors: agussuroyo
 Tags: swaggerui, wp swaggerui, wp rest api, wp swagger rest api, swaggerui rest api, swagger rest api, wp swagger, api, swagger, rest api
 Requires at least: 4.7
 Tested up to: 5.2.2
-Stable tag: 1.0
+Stable tag: 1.0.1
 Requires PHP: 5.4
 License: GPL v2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.txt
@@ -35,6 +35,9 @@ This plugin can be installed directly from your site.
 2. Options to choose namespace Rest API
 
 == Changelog ==
+
+= 1.0.1 =
+* Auto add params from path
 
 = 1.0 =
 * Initial release
