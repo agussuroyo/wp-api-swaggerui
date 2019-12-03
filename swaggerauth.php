@@ -74,7 +74,7 @@ class SwaggerAuth {
 
 $basic = new SwaggerAuth();
 
-add_filter( 'determine_current_user', [ $basic, 'handler' ] );
+add_filter( 'determine_current_user', [ $basic, 'handler' ], 20 );
 add_filter( 'rest_authentication_errors', [ $basic, 'error' ] );
 add_filter( 'swagger_api_security_definitions', [ $basic, 'appendSwaggerAuth' ] );
 
