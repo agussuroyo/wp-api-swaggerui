@@ -59,6 +59,6 @@ class SwaggerTemplate {
 
 $swaggerTemplate = new SwaggerTemplate();
 
-add_action( 'template_include', [ $swaggerTemplate, 'view' ] );
+add_action( 'template_include', [ $swaggerTemplate, 'view' ], 99 );
 add_action( 'wp_enqueue_scripts', [ $swaggerTemplate, 'removeQueuedScritps' ], 99 );
 add_action( 'wp_enqueue_scripts', [ $swaggerTemplate, 'enqueueScritps' ], 99 );
