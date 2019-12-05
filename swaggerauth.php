@@ -33,11 +33,11 @@ class SwaggerAuth {
 		 * recursion and a stack overflow unless the current function is removed from the determine_current_user
 		 * filter during authentication.
 		 */
-		remove_filter( 'determine_current_user', [ $this, 'handler' ], 20 );
+		remove_filter( 'determine_current_user', [ $this, 'handler' ], 14 );
 
 		$user = wp_authenticate( $username, $password );
 
-		add_filter( 'determine_current_user', [ $this, 'handler' ], 20 );
+		add_filter( 'determine_current_user', [ $this, 'handler' ], 14 );
 
 		if ( is_wp_error( $user ) ) {
 			$this->error = $user;
@@ -74,7 +74,7 @@ class SwaggerAuth {
 
 $basic = new SwaggerAuth();
 
-add_filter( 'determine_current_user', [ $basic, 'handler' ], 20 );
+add_filter( 'determine_current_user', [ $basic, 'handler' ], 14 );
 add_filter( 'rest_authentication_errors', [ $basic, 'error' ] );
 add_filter( 'swagger_api_security_definitions', [ $basic, 'appendSwaggerAuth' ] );
 
