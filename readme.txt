@@ -37,6 +37,9 @@ This plugin can be installed directly from your site.
 
 == Changelog ==
 
+= 1.0.4
+* make WooCommerce REST API Key works on Swagger Docs Auth
+
 = 1.0.3
 * change template_include priority
 * change dtermine_current_user priority
