@@ -79,7 +79,7 @@ class SwaggerAuth {
 
     public function authenticate( $user, $username, $password ) {
 
-	    if ( ! is_a( $user, 'WP_User' ) &&  class_exists( 'woocommerce' ) ) {
+	    if ( ! ( $user instanceof WP_User ) &&  class_exists( 'woocommerce' ) ) {
 	        $u = $this->getUserDataByConsumerKey( $username );
 	        if ( ! empty( $u ) && hash_equals( $u->consumer_secret, $password ) ) {
                 $user = get_user_by( 'ID', $u->user_id );
