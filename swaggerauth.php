@@ -70,11 +70,31 @@ class SwaggerAuth {
 		return $auth;
 	}
 
+	private function getUserDataByConsumerKey( $consumer_key ) {
+	    global $wpdb;
+
+	    $consumer_key = wc_api_hash( sanitize_text_field( $consumer_key ) );
+	    return $wpdb->get_row( $wpdb->prepare( "SELECT key_id, user_id, permissions, consumer_key, consumer_secret, nonces FROM {$wpdb->prefix}woocommerce_api_keys WHERE consumer_key = %s LIMIT 1", $consumer_key ) );
+    }
+
+    public function authenticate( $user, $username, $password ) {
+
+	    if ( ! is_a( $user, 'WP_User' ) &&  class_exists( 'woocommerce' ) ) {
+	        $u = $this->getUserDataByConsumerKey( $username );
+	        if ( ! empty( $u ) && hash_equals( $u->consumer_secret, $password ) ) {
+                $user = get_user_by( 'ID', $u->user_id );
+            }
+        }
+
+	    return $user;
+    }
+
 }
 
 $basic = new SwaggerAuth();
 
 add_filter( 'determine_current_user', [ $basic, 'handler' ], 14 );
+add_filter( 'authenticate', [ $basic, 'authenticate' ], 21, 3 );
 add_filter( 'rest_authentication_errors', [ $basic, 'error' ] );
 add_filter( 'swagger_api_security_definitions', [ $basic, 'appendSwaggerAuth' ] );
 
