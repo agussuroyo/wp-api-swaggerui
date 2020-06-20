@@ -178,8 +178,8 @@ class WP_API_SwaggerUI {
 		$methodEndpoint	 = $mtd . str_replace( '/', '_', $endpoint );
 		$conf		 = array(
 		    'tags'		 => array( 'endpoint' ),
-		    'summary'	 => '',
-		    'description'	 => '',
+		    'summary'	 => isset( $arg['summary'] ) ? $arg['summary'] : '',
+		    'description'	 => isset( $arg['description'] ) ? $arg['description'] : '',
 		    'consumes'	 => [
 			'application/x-www-form-urlencoded',
 			'multipart/form-data',
