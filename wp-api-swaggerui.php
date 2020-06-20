@@ -64,7 +64,7 @@ class WP_API_SwaggerUI {
                 )
             ),
             'host'			 => $this->getHost(),
-            'basePath'		 => '/' . ltrim( rest_get_url_prefix(), '/' ),
+            'basePath'		 => $this->getBasePath(),
             'tags'			 => [ [ 'name' => 'endpoint', 'description' => '' ] ],
             'schemes'		 => $this->getSchemes(),
             'paths'			 => $this->getPaths(),
@@ -75,7 +75,12 @@ class WP_API_SwaggerUI {
     }
 
     public function getHost() {
-        return str_replace( [ 'http://', 'https://' ], '', home_url() );
+        return parse_url(home_url(), PHP_URL_HOST);
+    }
+
+    public function getBasePath() {
+        $path = parse_url(home_url(), PHP_URL_PATH);
+        return rtrim($path, '/') . '/' . ltrim( rest_get_url_prefix(), '/' );
     }
 
     public function getSchemes() {
@@ -241,6 +246,10 @@ class WP_API_SwaggerUI {
     public function buildParams( $param, $mtd, $endpoint, $detail ) {
 
         $type = $detail['type'] === 'object' ? 'string' : $detail['type'];
+
+        if ( is_array( $type ) && isset( $type[0] ) ) {
+            $type = $type[0];
+        }
 
         if ( empty( $type ) ) {
 
