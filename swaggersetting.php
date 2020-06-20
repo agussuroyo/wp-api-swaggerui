@@ -28,7 +28,7 @@ class SwaggerSetting {
 		$data['page_title']				 = get_admin_page_title();
 		$data['swagger_api_basepath']	 = WP_API_SwaggerUI::getCLeanNameSpace();
 		$data['namespaces']				 = rest_get_server()->get_namespaces();
-		$data['docs_url']				 = site_url( untrailingslashit( WP_API_SwaggerUI::rewriteBaseApi() ) . '/docs' );
+		$data['docs_url']				 = home_url( untrailingslashit( WP_API_SwaggerUI::rewriteBaseApi() ) . '/docs' );
 
 		echo self::template( 'setting', $data );
 	}

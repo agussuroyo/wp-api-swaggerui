@@ -49,7 +49,7 @@ class SwaggerTemplate {
 	    wp_enqueue_script( 'swagger-ui-app', WP_API_SwaggerUI::pluginUrl( 'template/swagger/app.js' ), [ 'swagger-ui-bundle', 'swagger-ui-standalone-preset' ], null, true );
 
 	    $l10n = array(
-		'schema_url' => site_url( WP_API_SwaggerUI::rewriteBaseApi() . '/schema' )
+		'schema_url' => home_url( WP_API_SwaggerUI::rewriteBaseApi() . '/schema' )
 	    );
 	    wp_localize_script( 'swagger-ui-app', 'swagger_ui_app', $l10n );
 	}
