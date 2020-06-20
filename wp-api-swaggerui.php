@@ -122,8 +122,7 @@ class WP_API_SwaggerUI {
 
         foreach ( $raw as $endpoint => $args ) {
             $ep		 = $this->convertEndpoint( $endpoint );
-            $path_parameters = $this->getParametersFromEndpoint( $endpoint );
-            $paths[$ep]	 = $this->getMethodsFromArgs( $ep, $args, $path_parameters );
+            $paths[$ep]	 = $this->getMethodsFromArgs( $ep, $endpoint,  $args );
         }
 
         return $paths;
@@ -140,66 +139,63 @@ class WP_API_SwaggerUI {
         return $endpoint;
     }
 
-    public function getMethodsFromArgs( $endpoint, $args, $path_parameters ) {
+    public function getMethodsFromArgs( $ep, $endpoint, $args ) {
 
+        $path_parameters = $this->getParametersFromEndpoint( $endpoint );
         $methods = [];
 
         foreach ( $args as $arg ) {
 
-            $parameters = $this->buildParameters( $endpoint, $arg );
-
-            $_parameters = [];
-            foreach ( $parameters as $key => $value ) {
-
-                $exist_key_name = array_map( function($i) {
-                    return $i['name'];
-                }, $value );
-
-                foreach ( $path_parameters as $key_name => $value_name ) {
-                    if ( ! in_array( $key_name, $exist_key_name ) ) {
-                        $v = array(
-                            'name'		 => $key_name,
-                            'in'		 => 'path',
-                            'description'	 => '',
-                            'required'	 => true,
-                            'type'		 => $value_name['type']
-                        );
-
-                        if ( ! empty( $value_name['format'] ) ) {
-                            $v['format'] = $value_name['format'];
-                        }
-
-                        $value[] = $v;
-                    }
-                }
-
-                $_parameters[$key] = $value;
-            }
-
-            $parameters = $_parameters;
+            $all_parameters = $this->getParametersFromArgs(
+                $ep,
+                isset( $arg['args'] ) ? $arg['args'] : [],
+                isset( $arg['methods'] ) ? $arg['methods'] : []
+            );
 
             foreach ( $arg['methods'] as $method => $bool ) {
                 $mtd		 = mb_strtolower( $method );
-                $methodEndpoint	 = $mtd . str_replace( '/', '_', $endpoint );
+                $methodEndpoint	 = $mtd . str_replace( '/', '_', $ep );
+                $parameters = isset( $all_parameters[$mtd] ) ? $all_parameters[$mtd] : [];
+
+                // Building parameters.
+                $existing_names = array_map( function ( $param ) {
+                    return $param['name'];
+                }, $parameters );
+                foreach ( $path_parameters as $path_params ) {
+                    if ( ! in_array( $path_params['name'], $existing_names ) ) {
+                        $parameters[] = $path_params;
+                    }
+                }
+
+                $produces = ['application/json'];
+                if ( isset( $arg['produces'] ) ) {
+                    $produces = (array) $arg['produces'];
+                }
+
+                $consumes = [
+                    'application/x-www-form-urlencoded',
+                    'multipart/form-data',
+                ];
+
+                if ( isset( $arg['consumes'] ) ) {
+                    $consumes = (array) $arg['consumes'];
+                }
+
+                if ( $arg['accept_json'] ) {
+                    $consumes[] = [ 'application/json' ];
+                }
+
                 $conf		 = array(
                     'tags'		 => array( 'endpoint' ),
                     'summary'	 => isset( $arg['summary'] ) ? $arg['summary'] : '',
                     'description'	 => isset( $arg['description'] ) ? $arg['description'] : '',
-                    'consumes'	 => [
-                        'application/x-www-form-urlencoded',
-                        'multipart/form-data',
-                        'application/json'
-                    ],
-                    'produces'	 => array(
-                        'application/json'
-                    ),
-                    'parameters'	 => isset( $parameters[$mtd] ) ? $parameters[$mtd] : [],
+                    'consumes'	 => $consumes,
+                    'produces'	 => $produces,
+                    'parameters'	 => $parameters,
                     'security'	 => $this->getSecurity(),
                     'responses'	 => $this->getResponses( $methodEndpoint )
                 );
-                if ( $arg['accept_json'] ) {
-                    $conf['consumes'][] = [ 'application/json' ];
-                }
+
                 $methods[$mtd] = $conf;
             }
         }
@@ -213,10 +209,17 @@ class WP_API_SwaggerUI {
         if ( mb_strpos( $endpoint, '(?P<' ) !== false && ( preg_match_all( '/\(\?P\<(.*?)>(.*?)\)/', $endpoint, $matches ) ) ) {
             foreach ( $matches[1] as $order => $match ) {
                 $type			 = strpos( mb_strtolower( $matches[2][$order] ), '\d' ) !== false ? 'integer' : 'string';
-                $path_params[$match]	 = array(
-                    'type'	 => $type,
-                    'format' => $type === 'integer' ? 'int64' : null
+                $params = array(
+                    'name'        => $match,
+                    'in'          => 'path',
+                    'description' => '',
+                    'required'    => true,
+                    'type'	      => $type,
                 );
+                if ($type === 'integer') {
+                    $params['format'] = 'int64';
+                }
+                $path_params[$match]	 = $params;
             }
         }
 
@@ -311,20 +314,18 @@ class WP_API_SwaggerUI {
         return $params;
     }
 
-    public function buildParameters( $endpoint, $arg ) {
+    public function getParametersFromArgs($endpoint = '', $args = [], $methods = [] ) {
         $parameters = [];
 
-        if ( isset( $arg['args'] ) ) {
-            foreach ( $arg['args'] as $param => $detail ) {
-                foreach ( $arg['methods'] as $method => $bool ) {
-                    $mtd = mb_strtolower( $method );
+        foreach ( $args as $param => $detail ) {
+            foreach ( $methods as $method => $bool ) {
+                $mtd = mb_strtolower( $method );
 
-                    if ( ! isset( $parameters[$mtd] ) ) {
-                        $parameters[$mtd] = [];
-                    }
-
-                    $parameters[$mtd][] = $this->buildParams( $param, $mtd, $endpoint, $detail );
+                if ( ! isset( $parameters[$mtd] ) ) {
+                    $parameters[$mtd] = [];
                 }
+
+                $parameters[$mtd][] = $this->buildParams( $param, $mtd, $endpoint, ['type' => 'string'] + $detail );
             }
         }
 
