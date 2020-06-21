@@ -75,7 +75,7 @@ class TestSwaggerUI extends WP_UnitTestCase {
 	}
 
 	public function test_buildParameters() {
-		$this->assertTrue( is_array( $this->ui->buildParameters( '/sample/{id}', [] ) ) );
+		$this->assertTrue( is_array( $this->ui->getParametersFromArgs( '/sample/{id}', [], [] ) ) );
 	}
 
 	public function test_securityDefinitions() {
