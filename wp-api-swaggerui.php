@@ -74,8 +74,17 @@ class WP_API_SwaggerUI {
         wp_send_json( $response );
     }
 
-    public function getHost() {
-        return parse_url(home_url(), PHP_URL_HOST);
+	public function getHost() {
+        $host = parse_url(home_url(), PHP_URL_HOST);
+        $port = parse_url(home_url(), PHP_URL_PORT);
+
+        if ( $port ) {
+            if ( $port != 80 && $port != 443 ) {
+                $host = $host . ':' . $port;
+            }
+        }
+
+        return $host;
     }
 
     public function getBasePath() {
