@@ -10,7 +10,7 @@
  * @wordpress-plugin
  * Plugin Name: WP API SwaggerUI
  * Description: WordPress REST API with Swagger UI.
- * Version:     1.0.6
+ * Version:     1.0.7
  * Author:      Agus Suroyo
  * License:     GPL v2 or later
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
@@ -74,8 +74,17 @@ class WP_API_SwaggerUI {
         wp_send_json( $response );
     }
 
-    public function getHost() {
-        return parse_url(home_url(), PHP_URL_HOST);
+	public function getHost() {
+        $host = parse_url(home_url(), PHP_URL_HOST);
+        $port = parse_url(home_url(), PHP_URL_PORT);
+
+        if ( $port ) {
+            if ( $port != 80 && $port != 443 ) {
+                $host = $host . ':' . $port;
+            }
+        }
+
+        return $host;
     }
 
     public function getBasePath() {
