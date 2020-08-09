@@ -10,3 +10,6 @@ phpunit.* export-ignore
 README.md export-ignore
 tests export-ignore
 bin export-ignore
+resources export-ignore
+webpack.* export-ignore
+node_modules export-ignore

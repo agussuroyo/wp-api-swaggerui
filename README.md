@@ -14,3 +14,12 @@ This plugin is used to display SwaggerUI on WordPress installation by accessing:
  - Your website should not block support of WordPress default REST API
  - Works for WordPress REST API Version 2
  - PHP Version should be greater than 5.4 
+
+**Instalation**
+ - Manual Installation
+   - Clone this repository
+   - Run `npm install`
+   - Run `npm run build`
+   - Copy all files into your `wp-content/plugins/wp-api-swaggerui` folder
+ - Automatic Installation
+   - Go to Plugin menu inside your WordPress installation and install it from there
