@@ -32,6 +32,7 @@
   "devDependencies": {
     "@wordpress/scripts": "^12.1.1",
     "ignore-emit-webpack-plugin": "^2.0.2",
+    "optimize-css-assets-webpack-plugin": "^5.0.3",
     "swagger-ui-dist": "^3.31.1"
   }
 }
