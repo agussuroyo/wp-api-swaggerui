@@ -37,6 +37,9 @@ This plugin can be installed directly from your site.
 
 == Changelog ==
 
+= 1.1.2 =
+* Update regex for parameter detection
+
 = 1.1.1 =
 * Put back missing header element
 
