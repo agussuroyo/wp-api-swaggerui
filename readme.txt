@@ -3,8 +3,8 @@ Contributors: agussuroyo
 Donate link: https://www.paypal.me/agussuroyo
 Tags: swaggerui, wp swaggerui, wp rest api, wp swagger rest api, swaggerui rest api, swagger rest api, wp swagger, api, swagger, rest api
 Requires at least: 4.7
-Tested up to: 5.4
-Stable tag: 1.1.1
+Tested up to: 5.7
+Stable tag: 1.1.2
 Requires PHP: 5.4
 License: GPL v2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.txt
