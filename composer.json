@@ -1,0 +1,15 @@
+{
+    "name": "jonyextenz/wp-api-swaggerui",
+    "description": "WordPress REST API SwaggerUI Doc Generator",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Agus Suroyo",
+            "email": "jony.extenz@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "phpunit/phpunit": "4.8.*|5.7.*|7.*"
+    }
+}
