@@ -48,13 +48,10 @@ class TestSwaggerUI extends WP_UnitTestCase {
 
 	public function test_convertEndpoint() {
 		$this->assertEquals( '/sample/endpoint/{sample_id}', $this->ui->convertEndpoint( '/sample/endpoint/(?P<sample_id>)' ) );
+        $this->assertEquals( '/other/{other_id}/edit', $this->ui->convertEndpoint( '/other/(?P<other_id>[^.\/]+(?:\/[^.\/]+)?)/edit' ) );
 	}
 
-	public function test_getMethodsFromArgs() {
-		$this->assertTrue( true );
-	}
-
-	public function test_detectIn() {
+    public function test_detectIn() {
 		$this->assertEquals( 'path', $this->ui->detectIn( 'id', 'get', '/sample/{id}', null ) );
 		$this->assertEquals( 'query', $this->ui->detectIn( 'other_id', 'get', '/sample/{id}', null ) );
 		$this->assertEquals( 'formData', $this->ui->detectIn( 'firstname', 'post', '/sample/{id}', null ) );
