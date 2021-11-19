@@ -8,6 +8,9 @@ class SwaggerTemplate
         if (get_query_var('swagger_api') === 'docs') {
             $template = WP_API_SwaggerUI::pluginPath('template/single.php');
         }
+        if (get_query_var('swagger_api') === 'ns') {
+            die(WP_API_SwaggerUI::getNameSpaces());
+        }
         return $template;
     }
 
@@ -51,8 +54,9 @@ class SwaggerTemplate
             $info_js = $this->getAssetInfo('assets/js/app');
             wp_enqueue_script('swagger-ui', WP_API_SwaggerUI::pluginUrl('assets/js/app.js'), $info_js['dependencies'], $info_js['version'], true);
 
+            $qpNameSpace = WP_API_SwaggerUI::getQPNameSpace();
             $l10n = array(
-                'schema_url' => home_url(WP_API_SwaggerUI::rewriteBaseApi() . '/schema')
+                'schema_url' => home_url(WP_API_SwaggerUI::rewriteBaseApi() . '/schema' . ($qpNameSpace ? "?namespace=$qpNameSpace" : ""))
             );
             wp_localize_script('swagger-ui', 'swagger_ui_app', $l10n);
         }
@@ -70,7 +74,6 @@ class SwaggerTemplate
 
         return $info;
     }
-
 }
 
 $swaggerTemplate = new SwaggerTemplate();
