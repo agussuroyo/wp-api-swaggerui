@@ -228,6 +228,11 @@ class WP_API_SwaggerUI
                     $tags = $args['tags'];
                 }
 
+                $responses =$this->getResponses($methodEndpoint);
+                if (isset($arg['responses'])) {
+                    $responses = $arg['responses'];
+                }
+
                 $conf = array(
                     'tags' => $tags,
                     'summary' => isset($arg['summary']) ? $arg['summary'] : '',
@@ -236,7 +241,7 @@ class WP_API_SwaggerUI
                     'produces' => $produces,
                     'parameters' => $parameters,
                     'security' => $this->getSecurity(),
-                    'responses' => $this->getResponses($methodEndpoint)
+                    'responses' => $responses
                 );
 
                 $methods[$mtd] = $conf;
