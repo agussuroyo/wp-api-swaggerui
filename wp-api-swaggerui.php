@@ -381,7 +381,7 @@ class WP_API_SwaggerUI
                     $parameters[$mtd] = [];
                 }
 
-                $parameters[$mtd][] = $this->buildParams($param, $mtd, $endpoint, ['type' => 'string'] + $detail);
+                $parameters[$mtd][] = $this->buildParams($param, $mtd, $endpoint, $detail + ['type' => 'string']);
             }
         }
 
