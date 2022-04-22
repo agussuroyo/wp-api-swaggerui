@@ -357,6 +357,10 @@ class WP_API_SwaggerUI
             $params['format'] = 'int64';
         }
 
+        if (isset($detail['schema'])) {
+            $params['schema'] = $detail['schema'];
+        }
+
         return $params;
     }
 
