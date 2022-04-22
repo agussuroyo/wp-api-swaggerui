@@ -272,6 +272,10 @@ class WP_API_SwaggerUI
 
     public function detectIn($param, $mtd, $endpoint, $detail)
     {
+        if (isset($detail['in'])) {
+            return $detail['in'];
+        }
+
         switch ($mtd) {
             case strpos($endpoint, '{' . $param . '}') !== false:
                 $in = 'path';
