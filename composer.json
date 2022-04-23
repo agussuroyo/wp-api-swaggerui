@@ -11,5 +11,8 @@
     "minimum-stability": "stable",
     "require": {
         "phpunit/phpunit": "4.8.*|5.7.*|7.*"
-    }
+    },
+    "require-dev":{
+        "yoast/phpunit-polyfills" : "1.0.3"
+  }
 }
