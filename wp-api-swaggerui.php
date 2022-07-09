@@ -296,11 +296,23 @@ class WP_API_SwaggerUI
         return $in;
     }
 
+    public function parseTypeObjectToString($types)
+    {
+        if (is_array($types)) {
+            foreach ($types as $type) {
+                return $this->parseTypeObjectToString($type);
+            }
+        }
+        return $types === 'object' ? 'string' : $types;
+    }
+
     public function buildParams($param, $mtd, $endpoint, $detail)
     {
-
-        $type = $detail['type'] === 'object' ? 'string' : $detail['type'];
-
+        /**
+         * When the type is object, SwaggerUI by default add empty `{}` to parameter value
+         * It's annoying so need to convert to just `string`
+         */
+        $type = $this->parseTypeObjectToString($detail['type']);
         if (is_array($type) && isset($type[0])) {
             $type = $type[0];
         }
