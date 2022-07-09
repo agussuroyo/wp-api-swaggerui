@@ -345,7 +345,7 @@ class WP_API_SwaggerUI
 
         if (isset($detail['items'])) {
             $params['items'] = array(
-                'type' => $detail['items']['type']
+                'type' => isset($detail['items']['type']) ? $detail['items']['type'] : 'string'
             );
         } elseif (isset($detail['enum'])) {
             $params['type'] = 'array';
