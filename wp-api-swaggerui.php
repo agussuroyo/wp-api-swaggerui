@@ -1,4 +1,5 @@
 <?php
+
 /**
  * WP API SwaggerUI
  *
@@ -38,6 +39,7 @@ class WP_API_SwaggerUI
         add_rewrite_tag('%swagger_api%', '([^&]+)');
         add_rewrite_rule('^' . $base . '/docs/?', 'index.php?swagger_api=docs', 'top');
         add_rewrite_rule('^' . $base . '/schema/?', 'index.php?swagger_api=schema', 'top');
+        add_rewrite_rule('^' . $base . '/ns/?', 'index.php?swagger_api=ns', 'top');
     }
 
     public static function rewriteBaseApi()
@@ -114,12 +116,29 @@ class WP_API_SwaggerUI
         return $schemes;
     }
 
-    public static function getNameSpace()
+    public static function getNameSpaces()
     {
-        return '/' . trim(get_option('swagger_api_basepath', '/wp/v2'), '/');
+        return json_encode(rest_get_server()->get_namespaces(), JSON_FORCE_OBJECT);
     }
 
-    public static function getCLeanNameSpace()
+    public static function getQPNameSpace()
+    {
+        $qp = array();
+        parse_str($_SERVER['QUERY_STRING'], $qp);
+        return isset($qp['namespace']) && in_array($qp['namespace'], rest_get_server()->get_namespaces()) ? $qp['namespace'] : NULL;
+    }
+
+    public static function getDefaultNameSpace()
+    {
+        return get_option('swagger_api_basepath', '/wp/v2');
+    }
+
+    public static function getNameSpace()
+    {
+        return '/' . trim(self::getQPNameSpace() ?: self::getDefaultNameSpace(), '/');
+    }
+
+    public static function getCleanNameSpace()
     {
         return trim(self::getNameSpace(), '/');
     }
@@ -417,7 +436,8 @@ class WP_API_SwaggerUI
         return $securities;
     }
 
-    public function getResponses( $methodEndpoint ) {
+    public function getResponses($methodEndpoint)
+    {
         return apply_filters('swagger_api_responses_' . $methodEndpoint, array(
             '200' => ['description' => 'OK'],
             '404' => ['description' => 'Not Found'],
@@ -448,7 +468,6 @@ class WP_API_SwaggerUI
         echo '</pre>';
         die();
     }
-
 }
 
 $swagerui = new WP_API_SwaggerUI();
