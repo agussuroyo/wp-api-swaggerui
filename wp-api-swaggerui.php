@@ -157,7 +157,7 @@ class WP_API_SwaggerUI
     {
 
         if (mb_strpos($endpoint, '(?P<') !== false) {
-            $endpoint = preg_replace_callback('/\(\?P\<(.*?)>(.*)\)+/', function ($match) use ($endpoint) {
+            $endpoint = preg_replace_callback('/\(\?P\<(.*?)>(.*?)\)+/', function ($match) use ($endpoint) {
                 return '{' . $match[1] . '}';
             }, $endpoint);
         }
@@ -255,7 +255,7 @@ class WP_API_SwaggerUI
     {
         $path_params = [];
 
-        if (mb_strpos($endpoint, '(?P<') !== false && (preg_match_all('/\(\?P\<(.*?)>(.*)\)/', $endpoint, $matches))) {
+        if (mb_strpos($endpoint, '(?P<') !== false && (preg_match_all('/\(\?P\<(.*?)>(.*?)\)/', $endpoint, $matches))) {
             foreach ($matches[1] as $order => $match) {
                 $type = strpos(mb_strtolower($matches[2][$order]), '\d') !== false ? 'integer' : 'string';
                 $params = array(
