@@ -168,9 +168,14 @@ class WP_API_SwaggerUI
     public function getDefaultTagsFromEndpoint($endpoint)
     {
         $namespace = self::getNameSpace();
+        // Remove namespace
         $ep = preg_replace_callback('/^' . preg_quote($namespace, '/') . '/', function () {
             return '';
         }, $endpoint);
+        // Remove url parameters
+        $ep = preg_replace_callback('/\(\?P\<(.*?)>(.*?)\)+/', function () {
+            return '';
+        }, $ep);
         $parts = explode('/', trim($ep, '/'));
         return isset($parts[0]) ? [$parts[0]] : [];
     }
