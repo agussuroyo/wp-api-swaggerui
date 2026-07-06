@@ -4,13 +4,13 @@ class TestSwaggerBag extends WP_UnitTestCase {
 
 	public $bag = null;
 
-	public function setUp() {
+	public function set_up() {
 
 		$this->bag = new SwaggerBag( array(
 			'sample' => 'yes'
 				) );
 
-		parent::setUp();
+		parent::set_up();
 	}
 
 	public function test_all() {

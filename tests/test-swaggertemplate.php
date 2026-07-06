@@ -5,12 +5,12 @@ class TestSwaggerTemplate extends WP_UnitTestCase
 
     public $template = null;
 
-    public function setUp()
+    public function set_up()
     {
 
         $this->template = new SwaggerTemplate();
 
-        parent::setUp();
+        parent::set_up();
     }
 
     public function test_instance()
