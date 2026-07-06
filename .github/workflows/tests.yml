@@ -1,0 +1,59 @@
+name: Tests
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+
+jobs:
+  phpunit:
+    name: WP ${{ matrix.wp }} / PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: [ '7.4', '8.0', '8.1', '8.2', '8.3' ]
+        wp: [ 'latest' ]
+        include:
+          - { php: '7.4', wp: '6.0' }
+          - { php: '7.4', wp: '5.9' }
+          - { php: '8.3', wp: 'trunk' }
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer
+          coverage: none
+
+      - name: Install SVN and MySQL client
+        run: sudo apt-get update && sudo apt-get install -y subversion default-mysql-client
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Install WP test suite
+        run: bash bin/install-wp-tests.sh wordpress_test root '' 127.0.0.1 ${{ matrix.wp }}
+
+      - name: PHPUnit (single site)
+        run: vendor/bin/phpunit
+
+      - name: PHPUnit (multisite)
+        run: WP_MULTISITE=1 vendor/bin/phpunit
