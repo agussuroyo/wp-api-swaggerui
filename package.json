@@ -1,6 +1,6 @@
 {
   "name": "wp-api-swaggerui",
-  "version": "1.0.9",
+  "version": "2.0.0",
   "description": "SwaggerUI for WordPress",
   "main": "index.js",
   "directories": {
