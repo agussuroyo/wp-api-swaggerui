@@ -1,6 +1,6 @@
 # SwaggerUI for WordPress REST API
 
-[![Build Status](https://travis-ci.com/jonyextenz/wp-api-swaggerui.svg?branch=master)](https://travis-ci.com/jonyextenz/wp-api-swaggerui)
+[![Tests](https://github.com/agussuroyo/wp-api-swaggerui/actions/workflows/tests.yml/badge.svg)](https://github.com/agussuroyo/wp-api-swaggerui/actions/workflows/tests.yml)
 
 ## Description
 
