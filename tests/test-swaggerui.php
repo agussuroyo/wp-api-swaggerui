@@ -4,11 +4,11 @@ class TestSwaggerUI extends WP_UnitTestCase {
 
 	public $ui = null;
 
-	public function setUp() {
+	public function set_up() {
 
 		$this->ui = new WP_API_SwaggerUI();
 
-		parent::setUp();
+		parent::set_up();
 	}
 
 	public function test_rewriteBaseApi() {
@@ -19,8 +19,8 @@ class TestSwaggerUI extends WP_UnitTestCase {
 
 		$host = $this->ui->getHost();
 
-		$this->assertNotContains( 'http://', $host );
-		$this->assertNotContains( 'https://', $host );
+		$this->assertStringNotContainsString( 'http://', $host );
+		$this->assertStringNotContainsString( 'https://', $host );
 	}
 
 	public function test_getSchemes() {
