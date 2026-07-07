@@ -1,0 +1,56 @@
+name: Deploy to WordPress.org
+
+on:
+  push:
+    branches: [ master ]
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version from readme
+        id: v
+        run: |
+          VERSION=$(grep -i '^Stable tag:' readme.txt | head -1 | awk '{print $3}')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if git rev-parse "refs/tags/$VERSION" >/dev/null 2>&1; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Tag $VERSION already exists — nothing to release."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "New version $VERSION — will tag and deploy."
+          fi
+
+      - name: Setup Node
+        if: steps.v.outputs.changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build assets
+        if: steps.v.outputs.changed == 'true'
+        run: |
+          npm install
+          npm run build
+
+      - name: Create and push tag
+        if: steps.v.outputs.changed == 'true'
+        run: |
+          git tag "${{ steps.v.outputs.version }}"
+          git push origin "${{ steps.v.outputs.version }}"
+
+      - name: Deploy to WordPress.org SVN
+        if: steps.v.outputs.changed == 'true'
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SLUG: wp-api-swaggerui
+          VERSION: ${{ steps.v.outputs.version }}
