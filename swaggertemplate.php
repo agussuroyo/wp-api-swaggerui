@@ -14,31 +14,54 @@ class SwaggerTemplate
     public function removeQueuedScritps()
     {
         if (get_query_var('swagger_api') === 'docs') {
-            // Remove all default styles.
+            // Strip theme/front-end styles that clash with Swagger UI, but keep
+            // admin bar essentials and plugin assets (e.g. Query Monitor).
             global $wp_styles;
             $style_whitelist = ['admin-bar', 'dashicons'];
 
             if (isset($wp_styles->registered)) {
                 foreach ($wp_styles->registered as $handle => $data) {
-                    if (!in_array($handle, $style_whitelist)) {
-                        wp_deregister_style($handle);
-                        wp_dequeue_style($handle);
+                    if (in_array($handle, $style_whitelist) || $this->isPluginAsset($data->src)) {
+                        continue;
                     }
+                    wp_deregister_style($handle);
+                    wp_dequeue_style($handle);
                 }
             }
 
-            // Remove all default scripts;
+            // Same for scripts: keep admin bar and plugin assets.
             global $wp_scripts;
             $script_whitelist = ['admin-bar'];
 
             if (isset($wp_scripts->registered)) {
                 foreach ($wp_scripts->registered as $handle => $data) {
-                    if (!in_array($handle, $script_whitelist)) {
-                        wp_dequeue_script($handle);
+                    if (in_array($handle, $script_whitelist) || $this->isPluginAsset($data->src)) {
+                        continue;
                     }
+                    wp_dequeue_script($handle);
                 }
             }
         }
+    }
+
+    private function isPluginAsset($src)
+    {
+        if (!is_string($src) || $src === '') {
+            return false;
+        }
+
+        $bases = [plugins_url()];
+        if (defined('WPMU_PLUGIN_URL')) {
+            $bases[] = WPMU_PLUGIN_URL;
+        }
+
+        foreach ($bases as $base) {
+            if ($base && strpos($src, $base) === 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function enqueueScritps()
