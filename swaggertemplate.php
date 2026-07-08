@@ -52,22 +52,9 @@ class SwaggerTemplate
 
     private function isPluginAsset($src)
     {
-        if (!is_string($src) || $src === '') {
-            return false;
-        }
-
-        $bases = [plugins_url()];
-        if (defined('WPMU_PLUGIN_URL')) {
-            $bases[] = WPMU_PLUGIN_URL;
-        }
-
-        foreach ($bases as $base) {
-            if ($base && strpos($src, $base) === 0) {
-                return true;
-            }
-        }
-
-        return false;
+        // Trailing slash so 'wp-content/plugins' does not prefix-match siblings
+        // like 'wp-content/plugins-cache'. src is false for alias-only handles.
+        return is_string($src) && strpos($src, plugins_url('/')) === 0;
     }
 
     public function enqueueScritps()
