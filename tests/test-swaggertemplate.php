@@ -41,10 +41,29 @@ class TestSwaggerTemplate extends WP_UnitTestCase
 
         $this->template->removeQueuedScritps();
 
-        $this->assertTrue(wp_style_is('fake-plugin', 'registered'));
-        $this->assertFalse(wp_style_is('fake-theme', 'registered'));
+        $this->assertTrue(wp_style_is('fake-plugin', 'enqueued'));
+        $this->assertFalse(wp_style_is('fake-theme', 'enqueued'));
         $this->assertTrue(wp_script_is('fake-plugin-js', 'enqueued'));
         $this->assertFalse(wp_script_is('fake-theme-js', 'enqueued'));
+    }
+
+    public function test_removeQueuedScritps_kept_plugin_style_keeps_its_dependency()
+    {
+        add_filter('show_admin_bar', '__return_true');
+
+        global $wp_query;
+        $wp_query->set('swagger_api', 'docs');
+
+        wp_enqueue_style('theme-dep', 'http://example.org/wp-content/themes/foo/dep.css');
+        wp_enqueue_style('fake-plugin', plugins_url('fake.css', __FILE__), ['theme-dep']);
+
+        $this->template->removeQueuedScritps();
+
+        // Resolve dependencies the way printing does. If the dependency were
+        // deregistered, WordPress would drop the kept plugin style here.
+        global $wp_styles;
+        $wp_styles->all_deps($wp_styles->queue);
+        $this->assertContains('fake-plugin', $wp_styles->to_do);
     }
 
     public function test_removeQueuedScritps_strips_plugin_assets_when_no_admin_bar()
@@ -59,7 +78,7 @@ class TestSwaggerTemplate extends WP_UnitTestCase
 
         $this->template->removeQueuedScritps();
 
-        $this->assertFalse(wp_style_is('fake-plugin', 'registered'));
+        $this->assertFalse(wp_style_is('fake-plugin', 'enqueued'));
         $this->assertFalse(wp_script_is('fake-plugin-js', 'enqueued'));
     }
 }

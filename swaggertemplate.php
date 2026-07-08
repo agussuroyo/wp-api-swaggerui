@@ -20,7 +20,9 @@ class SwaggerTemplate
             $keep_plugin_assets = is_admin_bar_showing();
 
             // Strip theme/front-end styles that clash with Swagger UI, but keep
-            // admin bar essentials and plugin assets.
+            // admin bar essentials and plugin assets. Dequeue only (no
+            // deregister) so a kept style's dependencies stay registered and
+            // WordPress can still resolve and print it.
             global $wp_styles;
             $style_whitelist = ['admin-bar', 'dashicons'];
 
@@ -29,7 +31,6 @@ class SwaggerTemplate
                     if (in_array($handle, $style_whitelist) || ($keep_plugin_assets && $this->isPluginAsset($data->src))) {
                         continue;
                     }
-                    wp_deregister_style($handle);
                     wp_dequeue_style($handle);
                 }
             }
