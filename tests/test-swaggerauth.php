@@ -25,26 +25,25 @@ class TestSwaggerAuth extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The test environment runs a modern WP (>= 5.6), so the Basic Auth
-	 * handler that collides with native Application Passwords (#16) must NOT
-	 * be registered.
+	 * The auth handler, Woo key auth and Swagger security-definition filters are
+	 * always registered, regardless of WP version.
 	 */
-	public function test_handler_not_registered_on_modern_wp() {
-		global $wp_version;
-
-		$this->assertTrue( version_compare( $wp_version, '5.6', '>=' ), 'Expected modern WP test env' );
-
-		$this->assertFalse( $this->hook_has_swaggerauth( 'determine_current_user' ) );
-		$this->assertFalse( $this->hook_has_swaggerauth( 'rest_authentication_errors' ) );
+	public function test_core_filters_registered() {
+		$this->assertTrue( $this->hook_has_swaggerauth( 'determine_current_user' ) );
+		$this->assertTrue( $this->hook_has_swaggerauth( 'authenticate' ) );
+		$this->assertTrue( $this->hook_has_swaggerauth( 'swagger_api_security_definitions' ) );
 	}
 
 	/**
-	 * The Woo key auth and Swagger security-definition filters are always
-	 * registered, regardless of WP version.
+	 * On WP 5.6+ (the test env), the rest_authentication_errors reporter must NOT
+	 * be registered: it would hard-block the REST API and shadow native
+	 * Application Passwords. See #16.
 	 */
-	public function test_always_on_filters_registered() {
-		$this->assertTrue( $this->hook_has_swaggerauth( 'authenticate' ) );
-		$this->assertTrue( $this->hook_has_swaggerauth( 'swagger_api_security_definitions' ) );
+	public function test_error_filter_not_registered_on_modern_wp() {
+		global $wp_version;
+
+		$this->assertTrue( version_compare( $wp_version, '5.6', '>=' ), 'Expected modern WP test env' );
+		$this->assertFalse( $this->hook_has_swaggerauth( 'rest_authentication_errors' ) );
 	}
 
 }
