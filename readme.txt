@@ -4,7 +4,7 @@ Donate link: https://www.paypal.me/agussuroyo
 Tags: swaggerui, wp swaggerui, wp rest api, wp swagger rest api, swaggerui rest api, swagger rest api, wp swagger, api, swagger, rest api
 Requires at least: 4.7
 Tested up to: 7.0
-Stable tag: 2.0.1
+Stable tag: 2.0.2
 Requires PHP: 7.4
 License: GPL v2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.txt
@@ -36,6 +36,10 @@ This plugin can be installed directly from your site.
 2. Options to choose namespace Rest API
 
 == Changelog ==
+
+= 2.0.2 =
+* Fix REST API being blocked on WordPress 5.6+ when the site is behind server Basic Auth (broke Elementor editing and Application Passwords)
+* Keep WooCommerce consumer-key authentication working alongside native Application Passwords
 
 = 2.0.1 =
 * Fix REST routes with multiple or nested named parameters in the generated docs
