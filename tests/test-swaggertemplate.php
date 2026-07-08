@@ -27,8 +27,10 @@ class TestSwaggerTemplate extends WP_UnitTestCase
         $this->assertArrayHasKey('version', $info);
     }
 
-    public function test_removeQueuedScritps_keeps_plugin_assets_removes_theme()
+    public function test_removeQueuedScritps_keeps_plugin_assets_when_admin_bar_shows()
     {
+        add_filter('show_admin_bar', '__return_true');
+
         global $wp_query;
         $wp_query->set('swagger_api', 'docs');
 
@@ -43,5 +45,21 @@ class TestSwaggerTemplate extends WP_UnitTestCase
         $this->assertFalse(wp_style_is('fake-theme', 'registered'));
         $this->assertTrue(wp_script_is('fake-plugin-js', 'enqueued'));
         $this->assertFalse(wp_script_is('fake-theme-js', 'enqueued'));
+    }
+
+    public function test_removeQueuedScritps_strips_plugin_assets_when_no_admin_bar()
+    {
+        add_filter('show_admin_bar', '__return_false');
+
+        global $wp_query;
+        $wp_query->set('swagger_api', 'docs');
+
+        wp_enqueue_style('fake-plugin', plugins_url('fake.css', __FILE__));
+        wp_enqueue_script('fake-plugin-js', plugins_url('fake.js', __FILE__));
+
+        $this->template->removeQueuedScritps();
+
+        $this->assertFalse(wp_style_is('fake-plugin', 'registered'));
+        $this->assertFalse(wp_script_is('fake-plugin-js', 'enqueued'));
     }
 }

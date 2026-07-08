@@ -14,14 +14,19 @@ class SwaggerTemplate
     public function removeQueuedScritps()
     {
         if (get_query_var('swagger_api') === 'docs') {
+            // Only keep plugin assets when the admin bar is showing: that is when
+            // admin bar tools (e.g. Query Monitor) need them. Without the bar
+            // (public docs) strip everything so no front-end plugin CSS bleeds in.
+            $keep_plugin_assets = is_admin_bar_showing();
+
             // Strip theme/front-end styles that clash with Swagger UI, but keep
-            // admin bar essentials and plugin assets (e.g. Query Monitor).
+            // admin bar essentials and plugin assets.
             global $wp_styles;
             $style_whitelist = ['admin-bar', 'dashicons'];
 
             if (isset($wp_styles->registered)) {
                 foreach ($wp_styles->registered as $handle => $data) {
-                    if (in_array($handle, $style_whitelist) || $this->isPluginAsset($data->src)) {
+                    if (in_array($handle, $style_whitelist) || ($keep_plugin_assets && $this->isPluginAsset($data->src))) {
                         continue;
                     }
                     wp_deregister_style($handle);
@@ -35,7 +40,7 @@ class SwaggerTemplate
 
             if (isset($wp_scripts->registered)) {
                 foreach ($wp_scripts->registered as $handle => $data) {
-                    if (in_array($handle, $script_whitelist) || $this->isPluginAsset($data->src)) {
+                    if (in_array($handle, $script_whitelist) || ($keep_plugin_assets && $this->isPluginAsset($data->src))) {
                         continue;
                     }
                     wp_dequeue_script($handle);
