@@ -81,4 +81,55 @@ class TestSwaggerTemplate extends WP_UnitTestCase
         $this->assertFalse(wp_style_is('fake-plugin', 'enqueued'));
         $this->assertFalse(wp_script_is('fake-plugin-js', 'enqueued'));
     }
+
+    public function test_removeQueuedScritps_noop_when_not_docs()
+    {
+        add_filter('show_admin_bar', '__return_true');
+
+        global $wp_query;
+        $wp_query->set('swagger_api', '');
+
+        wp_enqueue_style('fake-theme', 'http://example.org/wp-content/themes/foo/style.css');
+        wp_enqueue_script('fake-theme-js', 'http://example.org/wp-content/themes/foo/app.js');
+
+        $this->template->removeQueuedScritps();
+
+        $this->assertTrue(wp_style_is('fake-theme', 'enqueued'));
+        $this->assertTrue(wp_script_is('fake-theme-js', 'enqueued'));
+    }
+
+    public function test_removeQueuedScritps_keeps_admin_bar_whitelist()
+    {
+        add_filter('show_admin_bar', '__return_true');
+
+        global $wp_query;
+        $wp_query->set('swagger_api', 'docs');
+
+        wp_enqueue_style('admin-bar');
+        wp_enqueue_style('dashicons');
+        wp_enqueue_script('admin-bar');
+
+        $this->template->removeQueuedScritps();
+
+        $this->assertTrue(wp_style_is('admin-bar', 'enqueued'));
+        $this->assertTrue(wp_style_is('dashicons', 'enqueued'));
+        $this->assertTrue(wp_script_is('admin-bar', 'enqueued'));
+    }
+
+    public function test_removeQueuedScritps_kept_plugin_script_keeps_its_dependency()
+    {
+        add_filter('show_admin_bar', '__return_true');
+
+        global $wp_query;
+        $wp_query->set('swagger_api', 'docs');
+
+        wp_enqueue_script('theme-dep-js', 'http://example.org/wp-content/themes/foo/dep.js');
+        wp_enqueue_script('fake-plugin-js', plugins_url('fake.js', __FILE__), ['theme-dep-js']);
+
+        $this->template->removeQueuedScritps();
+
+        global $wp_scripts;
+        $wp_scripts->all_deps($wp_scripts->queue);
+        $this->assertContains('fake-plugin-js', $wp_scripts->to_do);
+    }
 }
