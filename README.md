@@ -48,9 +48,10 @@ You can see Swagger Docs URL accessing:
 
 ### Authorization
 On WordPress 5.6+, the Swagger UI **Authorize** (Basic) prompt is handled by WordPress'
-native [Application Passwords](https://make.wordpress.org/core/2020/11/05/application-passwords-integration-guide/).
-Enter your WordPress username and an **application password** (not your login password).
-On older WordPress the plugin's built-in Basic Auth handles username and password.
+native [Application Passwords](https://make.wordpress.org/core/2020/11/05/application-passwords-integration-guide/):
+enter your WordPress username and an **application password** (not your login password).
+WooCommerce consumer key/secret pairs still authenticate here as well. On older
+WordPress the plugin's built-in Basic Auth handles the username and password.
 
 
 ## REST API Customization
