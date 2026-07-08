@@ -104,7 +104,10 @@ class SwaggerAuth {
 $basic = new SwaggerAuth();
 
 add_filter( 'determine_current_user', [ $basic, 'handler' ], 14 );
-add_filter( 'authenticate', [ $basic, 'authenticate' ], 21, 3 );
+// Priority 19 runs before core's wp_authenticate_application_password (20) so a
+// WooCommerce key resolves to a user first, preventing core from recording an
+// invalid-application-password error for the ck_ username. See #16.
+add_filter( 'authenticate', [ $basic, 'authenticate' ], 19, 3 );
 
 // Pre-5.6 has no Application Passwords, so surface Basic Auth failures as REST
 // errors. On 5.6+ this hard-blocks the REST API (breaks Elementor, App Passwords),
