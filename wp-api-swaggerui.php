@@ -158,7 +158,11 @@ class WP_API_SwaggerUI
     {
 
         if (mb_strpos($endpoint, '(?P<') !== false) {
-            $endpoint = preg_replace_callback('/\(\?P\<(.*?)>(.*)\)+/', function ($match) use ($endpoint) {
+            // Match each named group separately (multi-param routes). Atoms:
+            // escaped char, char class [...], or a (?3)-recursive balanced group,
+            // so a param regex may nest parens to any depth and may contain a
+            // literal ')' inside a class or escape without ending the group early.
+            $endpoint = preg_replace_callback('/\(\?P<([^>]+)>((?:\\\\.|\[[^\]]*\]|(\((?:\\\\.|\[[^\]]*\]|[^()]|(?3))*\))|[^()])*)\)/', function ($match) {
                 return '{' . $match[1] . '}';
             }, $endpoint);
         }
@@ -172,7 +176,12 @@ class WP_API_SwaggerUI
         $ep = preg_replace_callback('/^' . preg_quote($namespace, '/') . '/', function () {
             return '';
         }, $endpoint);
-        $parts = explode('/', trim($ep, '/'));
+        // Strip named parameters so the tag comes from a real path segment,
+        // not a raw (?P<...>) regex. Same recursive match as convertEndpoint.
+        $ep = preg_replace_callback('/\(\?P<([^>]+)>((?:\\\\.|\[[^\]]*\]|(\((?:\\\\.|\[[^\]]*\]|[^()]|(?3))*\))|[^()])*)\)/', function () {
+            return '';
+        }, $ep);
+        $parts = array_values(array_filter(explode('/', trim($ep, '/'))));
         return isset($parts[0]) ? [$parts[0]] : [];
     }
 
@@ -256,7 +265,7 @@ class WP_API_SwaggerUI
     {
         $path_params = [];
 
-        if (mb_strpos($endpoint, '(?P<') !== false && (preg_match_all('/\(\?P\<(.*?)>(.*)\)/', $endpoint, $matches))) {
+        if (mb_strpos($endpoint, '(?P<') !== false && (preg_match_all('/\(\?P<([^>]+)>((?:\\\\.|\[[^\]]*\]|(\((?:\\\\.|\[[^\]]*\]|[^()]|(?3))*\))|[^()])*)\)/', $endpoint, $matches))) {
             foreach ($matches[1] as $order => $match) {
                 $type = strpos(mb_strtolower($matches[2][$order]), '\d') !== false ? 'integer' : 'string';
                 $params = array(

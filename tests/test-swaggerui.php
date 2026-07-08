@@ -49,6 +49,28 @@ class TestSwaggerUI extends WP_UnitTestCase {
 	public function test_convertEndpoint() {
 		$this->assertEquals( '/sample/endpoint/{sample_id}', $this->ui->convertEndpoint( '/sample/endpoint/(?P<sample_id>)' ) );
         $this->assertEquals( '/other/{other_id}/edit', $this->ui->convertEndpoint( '/other/(?P<other_id>[^.\/]+(?:\/[^.\/]+)?)/edit' ) );
+        // Multiple params in one route must each convert, not collapse into the first.
+        $this->assertEquals( '/parent/{parent_id}/child/{child_id}', $this->ui->convertEndpoint( '/parent/(?P<parent_id>[\d]+)/child/(?P<child_id>[\d]+)' ) );
+        // A parameter pattern may nest parens to any depth.
+        $this->assertEquals( '/x/{slug}', $this->ui->convertEndpoint( '/x/(?P<slug>[a-z]+(?:-[a-z]+(?:-[a-z]+)?)?)' ) );
+        // A literal ')' inside a character class must not end the group early.
+        $this->assertEquals( '/x/{slug}/y', $this->ui->convertEndpoint( '/x/(?P<slug>[^/)]+)/y' ) );
+	}
+
+	public function test_getDefaultTagsFromEndpoint() {
+		$this->assertEquals( [ 'posts' ], $this->ui->getDefaultTagsFromEndpoint( '/wp/v2/posts' ) );
+		// A leading named param must not become the tag.
+		$this->assertEquals( [ 'revisions' ], $this->ui->getDefaultTagsFromEndpoint( '/wp/v2/(?P<parent>[\d]+)/revisions' ) );
+	}
+
+	public function test_getParametersFromEndpoint() {
+		$params = $this->ui->getParametersFromEndpoint( '/parent/(?P<parent_id>[\d]+)/child/(?P<child_slug>[\w]+)' );
+
+		$this->assertCount( 2, $params );
+		$this->assertArrayHasKey( 'parent_id', $params );
+		$this->assertArrayHasKey( 'child_slug', $params );
+		$this->assertEquals( 'integer', $params['parent_id']['type'] );
+		$this->assertEquals( 'string', $params['child_slug']['type'] );
 	}
 
     public function test_detectIn() {
