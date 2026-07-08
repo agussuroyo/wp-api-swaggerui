@@ -46,6 +46,12 @@ From the Swagger Setting page, choose between the API Basepath options displayed
 You can see Swagger Docs URL accessing:
   - http://example.com/rest-api/docs/
 
+### Authorization
+On WordPress 5.6+, the Swagger UI **Authorize** (Basic) prompt is handled by WordPress'
+native [Application Passwords](https://make.wordpress.org/core/2020/11/05/application-passwords-integration-guide/).
+Enter your WordPress username and an **application password** (not your login password).
+On older WordPress the plugin's built-in Basic Auth handles username and password.
+
 
 ## REST API Customization
 To customize how your created endpoints are shown at Swagger, here is an example with all the possible arguments you can add to your route:

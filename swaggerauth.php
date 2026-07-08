@@ -93,8 +93,15 @@ class SwaggerAuth {
 
 $basic = new SwaggerAuth();
 
-add_filter( 'determine_current_user', [ $basic, 'handler' ], 14 );
+global $wp_version;
+
+// WP 5.6+ ships native Application Passwords (Basic Auth) on determine_current_user.
+// Registering our own handler there collides with server Basic Auth and blocks the
+// REST API (breaks Elementor, App Passwords). Only register it on older WP. See #16.
+if ( version_compare( $wp_version, '5.6', '<' ) ) {
+	add_filter( 'determine_current_user', [ $basic, 'handler' ], 14 );
+	add_filter( 'rest_authentication_errors', [ $basic, 'error' ] );
+}
 add_filter( 'authenticate', [ $basic, 'authenticate' ], 21, 3 );
-add_filter( 'rest_authentication_errors', [ $basic, 'error' ] );
 add_filter( 'swagger_api_security_definitions', [ $basic, 'appendSwaggerAuth' ] );
 
