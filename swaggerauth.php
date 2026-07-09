@@ -90,9 +90,26 @@ class SwaggerAuth {
 			$auth = [];
 		}
 
-		$auth['basic'] = array(
-			'type' => 'basic'
-		);
+		$schemes = (array) get_option( 'swagger_api_auth_schemes', array( 'basic' ) );
+
+		if ( in_array( 'basic', $schemes, true ) ) {
+			$auth['basic'] = array(
+				'type' => 'basic',
+			);
+		}
+
+		if ( in_array( 'bearer', $schemes, true ) ) {
+			// ponytail: Swagger 2.0 has no native bearer type — apiKey-in-header
+			// named Authorization is the standard representation. We only emit
+			// the definition so Swagger UI sends the header; validating the
+			// token is the site's JWT plugin's job, not ours.
+			$auth['bearer'] = array(
+				'type'        => 'apiKey',
+				'name'        => 'Authorization',
+				'in'          => 'header',
+				'description' => 'Enter your token as: `Bearer <token>`',
+			);
+		}
 
 		return $auth;
 	}

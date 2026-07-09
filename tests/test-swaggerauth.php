@@ -63,4 +63,28 @@ class TestSwaggerAuth extends WP_UnitTestCase {
 		$this->assertNull( SwaggerAuth::parseBasicHeader( 'Basic not-base64-no-colon' ) );
 	}
 
+	public function test_default_emits_only_basic() {
+		delete_option( 'swagger_api_auth_schemes' );
+		$defs = ( new SwaggerAuth() )->appendSwaggerAuth( array() );
+		$this->assertArrayHasKey( 'basic', $defs );
+		$this->assertSame( 'basic', $defs['basic']['type'] );
+		$this->assertArrayNotHasKey( 'bearer', $defs );
+	}
+
+	public function test_both_schemes_emit_both() {
+		update_option( 'swagger_api_auth_schemes', array( 'basic', 'bearer' ) );
+		$defs = ( new SwaggerAuth() )->appendSwaggerAuth( array() );
+		$this->assertSame( 'basic', $defs['basic']['type'] );
+		$this->assertSame( 'apiKey', $defs['bearer']['type'] );
+		$this->assertSame( 'Authorization', $defs['bearer']['name'] );
+		$this->assertSame( 'header', $defs['bearer']['in'] );
+	}
+
+	public function test_bearer_only() {
+		update_option( 'swagger_api_auth_schemes', array( 'bearer' ) );
+		$defs = ( new SwaggerAuth() )->appendSwaggerAuth( array() );
+		$this->assertArrayNotHasKey( 'basic', $defs );
+		$this->assertArrayHasKey( 'bearer', $defs );
+	}
+
 }
