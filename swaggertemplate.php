@@ -53,8 +53,13 @@ class SwaggerTemplate
     private function isPluginAsset($src)
     {
         // Trailing slash so 'wp-content/plugins' does not prefix-match siblings
-        // like 'wp-content/plugins-cache'. src is false for alias-only handles.
-        return is_string($src) && strpos($src, plugins_url('/')) === 0;
+        // like 'wp-content/plugins-cache'. Cover must-use plugins too, since
+        // admin bar tools are often dropped in there. src is false for
+        // alias-only handles.
+        return is_string($src) && (
+            strpos($src, plugins_url('/')) === 0
+            || (defined('WPMU_PLUGIN_URL') && strpos($src, WPMU_PLUGIN_URL . '/') === 0)
+        );
     }
 
     public function enqueueScritps()

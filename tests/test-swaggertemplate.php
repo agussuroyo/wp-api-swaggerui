@@ -47,6 +47,22 @@ class TestSwaggerTemplate extends WP_UnitTestCase
         $this->assertFalse(wp_script_is('fake-theme-js', 'enqueued'));
     }
 
+    public function test_removeQueuedScritps_keeps_mu_plugin_assets()
+    {
+        add_filter('show_admin_bar', '__return_true');
+
+        global $wp_query;
+        $wp_query->set('swagger_api', 'docs');
+
+        wp_enqueue_style('mu-plugin', WPMU_PLUGIN_URL . '/tool/tool.css');
+        wp_enqueue_script('mu-plugin-js', WPMU_PLUGIN_URL . '/tool/tool.js');
+
+        $this->template->removeQueuedScritps();
+
+        $this->assertTrue(wp_style_is('mu-plugin', 'enqueued'));
+        $this->assertTrue(wp_script_is('mu-plugin-js', 'enqueued'));
+    }
+
     public function test_removeQueuedScritps_kept_plugin_style_keeps_its_dependency()
     {
         add_filter('show_admin_bar', '__return_true');
