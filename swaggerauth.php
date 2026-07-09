@@ -14,15 +14,13 @@ class SwaggerAuth {
 
 		// Check that we're trying to authenticate
 		if ( ! $server->has( 'PHP_AUTH_USER' ) ) {
-			
-			$user_pass = $server->get( 'REDIRECT_HTTP_AUTHORIZATION' );
-			if ( $server->has( 'REDIRECT_HTTP_AUTHORIZATION' ) && ! empty( $user_pass )  ) {
-				list($username, $password) = explode( ':', base64_decode( substr( $user_pass, 6 ) ) );
-				$server->set( 'PHP_AUTH_USER', $username );
-				$server->set( 'PHP_AUTH_PW', $password );
-			} else {
+
+			$creds = self::parseBasicHeader( $server->get( 'REDIRECT_HTTP_AUTHORIZATION' ) );
+			if ( $creds === null ) {
 				return $user_id;
 			}
+			$server->set( 'PHP_AUTH_USER', $creds[0] );
+			$server->set( 'PHP_AUTH_PW', $creds[1] );
 		}
 
 		$username	 = $server->get( 'PHP_AUTH_USER' );
@@ -57,6 +55,25 @@ class SwaggerAuth {
 		$this->error = true;
 
 		return $user->ID;
+	}
+
+	/**
+	 * Parse a Basic auth header into [username, password].
+	 * Returns null for non-Basic values (e.g. Bearer), so a Bearer token in
+	 * REDIRECT_HTTP_AUTHORIZATION is never mis-decoded into fake credentials.
+	 * public + static so the suite can test it without reflection.
+	 */
+	public static function parseBasicHeader( $value ) {
+		if ( ! is_string( $value ) || stripos( $value, 'Basic ' ) !== 0 ) {
+			return null;
+		}
+
+		$decoded = base64_decode( substr( $value, 6 ), true );
+		if ( $decoded === false || strpos( $decoded, ':' ) === false ) {
+			return null;
+		}
+
+		return explode( ':', $decoded, 2 );
 	}
 
 	public function error( $error ) {
