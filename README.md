@@ -9,6 +9,7 @@ SwaggerUI used to make WordPress REST API endpoint have a interactive UI, so we 
 ### Features
 - Support for `GET`, `POST`, `PUT`, `PATCH` and `DELETE` request methods
 - Support for Auth Basic authorization method
+- Support for Bearer token (`Authorization` header) authorization method
 - Choose which namespace API that will be used on the SwaggerUI
 
 ![alt text](https://i.ibb.co/p0Kjhpn/Screen-Shot-2019-07-25-at-08-57-32.png)
