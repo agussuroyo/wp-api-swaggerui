@@ -79,7 +79,9 @@ class WP_API_SwaggerUI
             'tags' => [],
             'schemes' => $this->getSchemes(),
             'paths' => $this->getPaths(),
-            'securityDefinitions' => $this->securityDefinitions()
+            // Cast to object so an empty set encodes as the Swagger 2.0 map `{}`
+            // instead of the JSON array `[]` (invalid securityDefinitions).
+            'securityDefinitions' => (object) $this->securityDefinitions()
         );
 
         wp_send_json($response);
