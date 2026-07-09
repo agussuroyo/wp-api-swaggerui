@@ -32,7 +32,7 @@ class SwaggerSetting {
 		$data['swagger_api_basepath']	 = WP_API_SwaggerUI::getCLeanNameSpace();
 		$data['namespaces']				 = rest_get_server()->get_namespaces();
 		$data['docs_url']				 = home_url( untrailingslashit( WP_API_SwaggerUI::rewriteBaseApi() ) . '/docs' );
-		$data['swagger_api_auth_schemes'] = get_option( 'swagger_api_auth_schemes', array( 'basic' ) );
+		$data['swagger_api_auth_schemes'] = (array) get_option( 'swagger_api_auth_schemes', array( 'basic' ) );
 
 		echo self::template( 'setting', $data );
 	}
