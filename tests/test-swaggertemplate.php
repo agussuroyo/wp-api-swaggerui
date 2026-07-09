@@ -27,6 +27,22 @@ class TestSwaggerTemplate extends WP_UnitTestCase
         $this->assertArrayHasKey('version', $info);
     }
 
+    public function test_enqueueScritps_wins_over_foreign_swagger_ui_handle()
+    {
+        global $wp_query;
+        $wp_query->set('swagger_api', 'docs');
+
+        wp_register_style('swagger-ui', 'http://example.org/wp-content/plugins/other/other.css');
+        wp_register_script('swagger-ui', 'http://example.org/wp-content/plugins/other/other.js');
+
+        $this->template->removeQueuedScritps();
+        $this->template->enqueueScritps();
+
+        global $wp_styles, $wp_scripts;
+        $this->assertStringContainsString('assets/css/app.css', $wp_styles->registered['swagger-ui']->src);
+        $this->assertStringContainsString('assets/js/app.js', $wp_scripts->registered['swagger-ui']->src);
+    }
+
     public function test_removeQueuedScritps_keeps_plugin_assets_when_admin_bar_shows()
     {
         add_filter('show_admin_bar', '__return_true');

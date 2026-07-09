@@ -66,6 +66,12 @@ class SwaggerTemplate
     {
         if (get_query_var('swagger_api') === 'docs') {
 
+            // Deregister our own handles first so our assets win even if
+            // another plugin already registered the 'swagger-ui' handle
+            // (dequeue no longer clears the registration).
+            wp_deregister_style('swagger-ui');
+            wp_deregister_script('swagger-ui');
+
             $info_css = $this->getAssetInfo('assets/css/app');
             wp_enqueue_style('swagger-ui', WP_API_SwaggerUI::pluginUrl('assets/css/app.css'), [], $info_css['version']);
 
