@@ -79,10 +79,15 @@ class WP_API_SwaggerUI
             'tags' => [],
             'schemes' => $this->getSchemes(),
             'paths' => $this->getPaths(),
-            // Cast to object so an empty set encodes as the Swagger 2.0 map `{}`
-            // instead of the JSON array `[]` (invalid securityDefinitions).
-            'securityDefinitions' => (object) $this->securityDefinitions()
         );
+
+        // Only advertise securityDefinitions when a scheme is enabled. Omitting
+        // the key (rather than emitting an empty map) keeps /schema valid Swagger
+        // 2.0 and stops Swagger UI rendering a stray, empty Authorize dialog.
+        $securityDefinitions = $this->securityDefinitions();
+        if (!empty($securityDefinitions)) {
+            $response['securityDefinitions'] = $securityDefinitions;
+        }
 
         wp_send_json($response);
     }
