@@ -46,4 +46,21 @@ class TestSwaggerAuth extends WP_UnitTestCase {
 		$this->assertFalse( $this->hook_has_swaggerauth( 'rest_authentication_errors' ) );
 	}
 
+	public function test_parse_basic_header_rejects_bearer() {
+		$this->assertNull( SwaggerAuth::parseBasicHeader( 'Bearer eyJhbGciOi.payload.sig' ) );
+	}
+
+	public function test_parse_basic_header_rejects_non_string() {
+		$this->assertNull( SwaggerAuth::parseBasicHeader( null ) );
+	}
+
+	public function test_parse_basic_header_parses_basic() {
+		$value = 'Basic ' . base64_encode( 'alice:s3cr3t' );
+		$this->assertSame( array( 'alice', 's3cr3t' ), SwaggerAuth::parseBasicHeader( $value ) );
+	}
+
+	public function test_parse_basic_header_rejects_malformed_base64() {
+		$this->assertNull( SwaggerAuth::parseBasicHeader( 'Basic not-base64-no-colon' ) );
+	}
+
 }
