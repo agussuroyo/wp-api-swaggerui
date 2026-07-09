@@ -14,6 +14,9 @@ class SwaggerSetting {
 				update_option( 'swagger_api_basepath', sanitize_text_field( $_POST['swagger_api_basepath'] ) );
 			}
 
+			$schemes = (array) ( isset( $_POST['swagger_api_auth_schemes'] ) ? $_POST['swagger_api_auth_schemes'] : array() );
+			update_option( 'swagger_api_auth_schemes', array_values( array_intersect( array( 'basic', 'bearer' ), $schemes ) ) );
+
 			add_action( 'admin_notices', [ $this, 'notices' ] );
 		}
 	}
@@ -29,6 +32,7 @@ class SwaggerSetting {
 		$data['swagger_api_basepath']	 = WP_API_SwaggerUI::getCLeanNameSpace();
 		$data['namespaces']				 = rest_get_server()->get_namespaces();
 		$data['docs_url']				 = home_url( untrailingslashit( WP_API_SwaggerUI::rewriteBaseApi() ) . '/docs' );
+		$data['swagger_api_auth_schemes'] = get_option( 'swagger_api_auth_schemes', array( 'basic' ) );
 
 		echo self::template( 'setting', $data );
 	}

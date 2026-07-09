@@ -17,7 +17,21 @@
 							?>
 						</select>
 					</td>
-				</tr>	
+				</tr>
+				<tr>
+					<th>Authentication</th>
+					<td>
+						<label>
+							<input type="checkbox" name="swagger_api_auth_schemes[]" value="basic" <?php checked( in_array( 'basic', $swagger_api_auth_schemes, true ) ); ?>>
+							Basic
+						</label><br>
+						<label>
+							<input type="checkbox" name="swagger_api_auth_schemes[]" value="bearer" <?php checked( in_array( 'bearer', $swagger_api_auth_schemes, true ) ); ?>>
+							Bearer (Authorization header)
+						</label>
+						<p class="description">Which authentication methods appear in the Swagger UI Authorize dialog. Bearer requires a token plugin (e.g. JWT) installed to validate requests.</p>
+					</td>
+				</tr>
 				<tr>
 					<th>API Docs</th>
 					<td>
