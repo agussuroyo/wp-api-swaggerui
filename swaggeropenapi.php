@@ -158,11 +158,11 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 			if ( 'basic' === $type ) {
 				$out[ $key ] = array( 'type' => 'http', 'scheme' => 'basic' );
 			} elseif ( 'bearer' === $key ) {
-				$scheme = array( 'type' => 'http', 'scheme' => 'bearer' );
-				if ( isset( $def['description'] ) ) {
-					$scheme['description'] = $def['description'];
-				}
-				$out[ $key ] = $scheme;
+				$out[ $key ] = array(
+					'type'        => 'http',
+					'scheme'      => 'bearer',
+					'description' => 'Enter your token; the "Bearer" prefix is added automatically.',
+				);
 			} else {
 				$out[ $key ] = $def; // already valid 3.0 (e.g. apiKey)
 			}
