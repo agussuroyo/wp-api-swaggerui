@@ -56,6 +56,7 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 
 	private function mapOperation(array $op): array {
 		$produces = ! empty( $op['produces'] ) ? (array) $op['produces'] : array( 'application/json' );
+		$consumes = ! empty( $op['consumes'] ) ? (array) $op['consumes'] : array();
 		unset( $op['consumes'], $op['produces'] );
 
 		if ( isset( $op['responses'] ) ) {
@@ -90,11 +91,15 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 		}
 
 		if ( ! empty( $form_data ) ) {
-			$op['requestBody'] = $this->mapFormDataBody( $form_data );
+			$media             = ! empty( $consumes ) ? $consumes : array( 'application/x-www-form-urlencoded' );
+			$op['requestBody'] = $this->mapFormDataBody( $form_data, $media );
 		} elseif ( null !== $body ) {
-			$request_body = array(
-				'content' => array( 'application/json' => array( 'schema' => $body ) ),
-			);
+			$media   = ! empty( $consumes ) ? $consumes : array( 'application/json' );
+			$content = array();
+			foreach ( $media as $m ) {
+				$content[ $m ] = array( 'schema' => $body );
+			}
+			$request_body = array( 'content' => $content );
 			if ( $body_required ) {
 				$request_body['required'] = true;
 			}
@@ -158,13 +163,14 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 		return $schema;
 	}
 
-	private function mapFormDataBody(array $form_data): array {
+	private function mapFormDataBody(array $form_data, array $media): array {
 		$properties = array();
 		$required   = array();
 
 		foreach ( $form_data as $param ) {
 			$name   = $param['name'];
 			$schema = $this->extractSchema( $param, array( 'name', 'in', 'required', 'schema', 'collectionFormat' ) );
+			$schema = $this->normalizeFileSchema( $schema );
 			if ( empty( $schema ) ) {
 				$schema = array( 'type' => 'string' );
 			}
@@ -179,11 +185,20 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 			$body['required'] = $required;
 		}
 
-		return array(
-			'content' => array(
-				'application/x-www-form-urlencoded' => array( 'schema' => $body ),
-			),
-		);
+		$content = array();
+		foreach ( $media as $m ) {
+			$content[ $m ] = array( 'schema' => $body );
+		}
+
+		return array( 'content' => $content );
+	}
+
+	private function normalizeFileSchema(array $schema): array {
+		if ( isset( $schema['type'] ) && 'file' === $schema['type'] ) {
+			$schema['type']   = 'string';
+			$schema['format'] = 'binary';
+		}
+		return $schema;
 	}
 
 	private function mapSecuritySchemes(array $defs): array {

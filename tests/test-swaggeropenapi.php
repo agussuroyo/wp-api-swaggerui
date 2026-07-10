@@ -91,7 +91,7 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'components', $out );
 	}
 
-	private function specWithParams( array $params, string $method = 'get' ): array {
+	private function specWithParams( array $params, string $method = 'get', array $consumes = array( 'application/x-www-form-urlencoded' ) ): array {
 		return array(
 			'host'     => 'e.com',
 			'basePath' => '/wp-json',
@@ -100,7 +100,7 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 				'/x' => array(
 					$method => array(
 						'tags'       => array( 'x' ),
-						'consumes'   => array( 'application/x-www-form-urlencoded' ),
+						'consumes'   => $consumes,
 						'produces'   => array( 'application/json' ),
 						'parameters' => $params,
 						'responses'  => array( '200' => array( 'description' => 'OK' ) ),
@@ -211,7 +211,7 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 	public function test_spec30_body_param_to_json_requestbody() {
 		$spec = $this->specWithParams( array(
 			array( 'name' => 'payload', 'in' => 'body', 'required' => true, 'schema' => array( 'type' => 'object' ) ),
-		), 'post' );
+		), 'post', array( 'application/json' ) );
 		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
 
 		$this->assertArrayNotHasKey( 'parameters', $op );
@@ -265,7 +265,7 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 	public function test_spec30_body_required_on_requestbody() {
 		$spec = $this->specWithParams( array(
 			array( 'name' => 'payload', 'in' => 'body', 'required' => true, 'schema' => array( 'type' => 'object' ) ),
-		), 'post' );
+		), 'post', array( 'application/json' ) );
 		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
 
 		$this->assertTrue( $op['requestBody']['required'] );
@@ -282,6 +282,59 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
 
 		$this->assertArrayNotHasKey( 'required', $op['requestBody'] );
+	}
+
+	public function test_spec30_formdata_consumes_override() {
+		$spec = $this->specWithParams( array(
+			array( 'name' => 'title', 'in' => 'formData', 'required' => true, 'type' => 'string' ),
+		), 'post', array( 'application/xml' ) );
+		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
+
+		$this->assertArrayHasKey( 'application/xml', $op['requestBody']['content'] );
+		$this->assertArrayNotHasKey( 'application/x-www-form-urlencoded', $op['requestBody']['content'] );
+		$this->assertEquals(
+			array( 'type' => 'string' ),
+			$op['requestBody']['content']['application/xml']['schema']['properties']['title']
+		);
+	}
+
+	public function test_spec30_formdata_multiple_consumes() {
+		$spec = $this->specWithParams( array(
+			array( 'name' => 'title', 'in' => 'formData', 'required' => true, 'type' => 'string' ),
+		), 'post', array( 'application/x-www-form-urlencoded', 'multipart/form-data' ) );
+		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
+
+		$content = $op['requestBody']['content'];
+		$this->assertArrayHasKey( 'application/x-www-form-urlencoded', $content );
+		$this->assertArrayHasKey( 'multipart/form-data', $content );
+		$this->assertEquals(
+			$content['application/x-www-form-urlencoded']['schema'],
+			$content['multipart/form-data']['schema']
+		);
+	}
+
+	public function test_spec30_body_consumes_override() {
+		$spec = $this->specWithParams( array(
+			array( 'name' => 'payload', 'in' => 'body', 'required' => true, 'schema' => array( 'type' => 'object' ) ),
+		), 'post', array( 'application/xml' ) );
+		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
+
+		$this->assertEquals(
+			array( 'type' => 'object' ),
+			$op['requestBody']['content']['application/xml']['schema']
+		);
+	}
+
+	public function test_spec30_file_param_to_binary() {
+		$spec = $this->specWithParams( array(
+			array( 'name' => 'file', 'in' => 'formData', 'required' => true, 'type' => 'file' ),
+		), 'post', array( 'multipart/form-data' ) );
+		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
+
+		$this->assertEquals(
+			array( 'type' => 'string', 'format' => 'binary' ),
+			$op['requestBody']['content']['multipart/form-data']['schema']['properties']['file']
+		);
 	}
 
 	public function test_setting_save_whitelists_version() {
