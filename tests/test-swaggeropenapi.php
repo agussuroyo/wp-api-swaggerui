@@ -382,6 +382,83 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		);
 	}
 
+	public function test_spec30_path_array_param_simple_style() {
+		$spec  = $this->specWithParams( array(
+			array( 'name' => 'ids', 'in' => 'path', 'required' => true, 'type' => 'array', 'items' => array( 'type' => 'integer' ) ),
+		) );
+		$param = $this->firstParam( ( new Spec30Formatter() )->format( $spec ) );
+
+		$this->assertEquals( 'simple', $param['style'] );
+		$this->assertFalse( $param['explode'] );
+
+		$spec  = $this->specWithParams( array(
+			array( 'name' => 'ids', 'in' => 'header', 'required' => true, 'type' => 'array', 'items' => array( 'type' => 'integer' ) ),
+		) );
+		$param = $this->firstParam( ( new Spec30Formatter() )->format( $spec ) );
+
+		$this->assertEquals( 'simple', $param['style'] );
+		$this->assertFalse( $param['explode'] );
+	}
+
+	public function test_spec30_query_array_still_form() {
+		$spec  = $this->specWithParams( array(
+			array( 'name' => 'author', 'in' => 'query', 'required' => false, 'type' => 'array', 'items' => array( 'type' => 'integer' ) ),
+		) );
+		$param = $this->firstParam( ( new Spec30Formatter() )->format( $spec ) );
+
+		$this->assertEquals( 'form', $param['style'] );
+		$this->assertFalse( $param['explode'] );
+	}
+
+	public function test_spec30_oauth2_scheme_converted() {
+		$spec = array(
+			'host'                => 'e.com',
+			'basePath'            => '/wp-json',
+			'schemes'             => array( 'https' ),
+			'securityDefinitions' => array(
+				'oauth' => array(
+					'type'             => 'oauth2',
+					'flow'             => 'accessCode',
+					'authorizationUrl' => 'https://ex/auth',
+					'tokenUrl'         => 'https://ex/token',
+					'scopes'           => array( 'read' => 'Read' ),
+				),
+			),
+		);
+		$out = ( new Spec30Formatter() )->format( $spec );
+
+		$this->assertEquals(
+			array(
+				'type'  => 'oauth2',
+				'flows' => array(
+					'authorizationCode' => array(
+						'authorizationUrl' => 'https://ex/auth',
+						'tokenUrl'         => 'https://ex/token',
+						'scopes'           => array( 'read' => 'Read' ),
+					),
+				),
+			),
+			$out['components']['securitySchemes']['oauth']
+		);
+	}
+
+	public function test_spec30_unknown_apikey_scheme_passthrough() {
+		$spec = array(
+			'host'                => 'e.com',
+			'basePath'            => '/wp-json',
+			'schemes'             => array( 'https' ),
+			'securityDefinitions' => array(
+				'x' => array( 'type' => 'apiKey', 'in' => 'header', 'name' => 'X-Key' ),
+			),
+		);
+		$out = ( new Spec30Formatter() )->format( $spec );
+
+		$this->assertEquals(
+			array( 'type' => 'apiKey', 'in' => 'header', 'name' => 'X-Key' ),
+			$out['components']['securitySchemes']['x']
+		);
+	}
+
 	public function test_setting_save_whitelists_version() {
 		if ( ! class_exists( 'SwaggerSetting' ) ) {
 			require_once dirname( __DIR__ ) . '/swaggersetting.php';
