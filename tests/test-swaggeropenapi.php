@@ -91,6 +91,18 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'components', $out );
 	}
 
+	public function test_spec30_non_array_security_definitions_no_crash() {
+		$spec = array(
+			'host'                => 'e.com',
+			'basePath'            => '/wp-json',
+			'schemes'             => array( 'https' ),
+			'securityDefinitions' => 'x',
+		);
+		$out = ( new Spec30Formatter() )->format( $spec );
+
+		$this->assertArrayNotHasKey( 'components', $out );
+	}
+
 	private function specWithParams( array $params, string $method = 'get', array $consumes = array( 'application/x-www-form-urlencoded' ) ): array {
 		return array(
 			'host'     => 'e.com',
@@ -123,6 +135,25 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'consumes', $op );
 		$this->assertArrayNotHasKey( 'produces', $op );
 		$this->assertEquals( array( '200' => array( 'description' => 'OK' ) ), $op['responses'] );
+	}
+
+	public function test_spec30_non_array_responses_no_crash() {
+		$spec = array(
+			'host'     => 'e.com',
+			'basePath' => '/wp-json',
+			'schemes'  => array( 'https' ),
+			'paths'    => array(
+				'/x' => array(
+					'get' => array(
+						'tags'      => array( 'x' ),
+						'responses' => 'foo',
+					),
+				),
+			),
+		);
+		$op = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ) );
+
+		$this->assertEquals( 'foo', $op['responses'] );
 	}
 
 	public function test_spec30_scalar_param_to_schema() {
@@ -214,6 +245,18 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		$this->assertEquals( array( 'description' => 'Post title', 'type' => 'string' ), $schema['properties']['title'] );
 		$this->assertEquals( array( 'type' => 'string' ), $schema['properties']['excerpt'] );
 		$this->assertEquals( array( 'title' ), $schema['required'] );
+	}
+
+	public function test_spec30_formdata_nameless_param_skipped() {
+		$spec = $this->specWithParams( array(
+			array( 'name' => 'title', 'in' => 'formData', 'required' => false, 'type' => 'string' ),
+			array( 'in' => 'formData', 'required' => false, 'type' => 'string' ),
+		), 'post' );
+		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
+
+		$properties = $op['requestBody']['content']['application/x-www-form-urlencoded']['schema']['properties'];
+		$this->assertEquals( array( 'title' ), array_keys( $properties ) );
+		$this->assertArrayNotHasKey( '', $properties );
 	}
 
 	public function test_spec30_formdata_drops_collectionformat() {
@@ -522,6 +565,47 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 			),
 			$out['components']['securitySchemes']['oauth']
 		);
+	}
+
+	public function test_spec30_oauth2_empty_scopes_is_object() {
+		$spec = array(
+			'host'                => 'e.com',
+			'basePath'            => '/wp-json',
+			'schemes'             => array( 'https' ),
+			'securityDefinitions' => array(
+				'oauth' => array(
+					'type'             => 'oauth2',
+					'flow'             => 'implicit',
+					'authorizationUrl' => 'https://ex/auth',
+				),
+			),
+		);
+		$out = ( new Spec30Formatter() )->format( $spec );
+
+		$scopes = $out['components']['securitySchemes']['oauth']['flows']['implicit']['scopes'];
+		$this->assertInstanceOf( \stdClass::class, $scopes );
+		$this->assertStringContainsString( '"scopes":{}', wp_json_encode( $out['components']['securitySchemes']['oauth'] ) );
+	}
+
+	public function test_spec30_bearer_keyed_oauth2_converts() {
+		$spec = array(
+			'host'                => 'e.com',
+			'basePath'            => '/wp-json',
+			'schemes'             => array( 'https' ),
+			'securityDefinitions' => array(
+				'bearer' => array(
+					'type'             => 'oauth2',
+					'flow'             => 'implicit',
+					'authorizationUrl' => 'https://x/a',
+				),
+			),
+		);
+		$out = ( new Spec30Formatter() )->format( $spec );
+
+		$scheme = $out['components']['securitySchemes']['bearer'];
+		$this->assertEquals( 'oauth2', $scheme['type'] );
+		$this->assertEquals( 'https://x/a', $scheme['flows']['implicit']['authorizationUrl'] );
+		$this->assertInstanceOf( \stdClass::class, $scheme['flows']['implicit']['scopes'] );
 	}
 
 	public function test_spec30_unknown_apikey_scheme_passthrough() {

@@ -87,7 +87,7 @@ class WP_API_SwaggerUI
         // the key (rather than emitting an empty map) keeps /schema valid Swagger
         // 2.0 and stops Swagger UI rendering a stray, empty Authorize dialog.
         $securityDefinitions = $this->securityDefinitions();
-        if (!empty($securityDefinitions)) {
+        if (is_array($securityDefinitions) && !empty($securityDefinitions)) {
             $response['securityDefinitions'] = $securityDefinitions;
         }
 

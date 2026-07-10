@@ -27,7 +27,7 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 		unset( $spec['host'], $spec['basePath'], $spec['schemes'] );
 		$spec = array( 'openapi' => $this->version() ) + $spec;
 
-		if ( isset( $spec['securityDefinitions'] ) ) {
+		if ( isset( $spec['securityDefinitions'] ) && is_array( $spec['securityDefinitions'] ) ) {
 			$schemes = $this->mapSecuritySchemes( $spec['securityDefinitions'] );
 			if ( ! empty( $schemes ) ) {
 				$spec['components'] = array( 'securitySchemes' => $schemes );
@@ -59,7 +59,7 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 		$consumes = ! empty( $op['consumes'] ) ? (array) $op['consumes'] : array();
 		unset( $op['consumes'], $op['produces'] );
 
-		if ( isset( $op['responses'] ) ) {
+		if ( isset( $op['responses'] ) && is_array( $op['responses'] ) ) {
 			$op['responses'] = $this->mapResponses( $op['responses'], $produces );
 		}
 
@@ -195,6 +195,9 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 		$encoding   = array();
 
 		foreach ( $form_data as $param ) {
+			if ( ! isset( $param['name'] ) || '' === $param['name'] ) {
+				continue;
+			}
 			$name              = $param['name'];
 			$collection_format = isset( $param['collectionFormat'] ) ? $param['collectionFormat'] : null;
 			$schema            = $this->extractSchema( $param, array( 'name', 'in', 'required', 'schema', 'collectionFormat' ) );
@@ -250,7 +253,7 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 			$type = isset( $def['type'] ) ? $def['type'] : '';
 			if ( 'basic' === $type ) {
 				$out[ $key ] = array( 'type' => 'http', 'scheme' => 'basic' );
-			} elseif ( 'bearer' === $key ) {
+			} elseif ( 'bearer' === $key && 'oauth2' !== $type ) {
 				$out[ $key ] = array(
 					'type'        => 'http',
 					'scheme'      => 'bearer',
@@ -284,7 +287,7 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 		if ( isset( $def['tokenUrl'] ) ) {
 			$flow['tokenUrl'] = $def['tokenUrl'];
 		}
-		$flow['scopes'] = isset( $def['scopes'] ) ? $def['scopes'] : array();
+		$flow['scopes'] = ( isset( $def['scopes'] ) && ! empty( $def['scopes'] ) ) ? $def['scopes'] : new \stdClass();
 
 		$scheme = array(
 			'type'  => 'oauth2',
