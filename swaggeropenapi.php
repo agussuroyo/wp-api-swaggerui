@@ -16,11 +16,40 @@ class Spec20Formatter implements SwaggerSpecFormatter {
 	}
 }
 
+class Spec30Formatter implements SwaggerSpecFormatter {
+
+	public function version(): string {
+		return '3.0.3';
+	}
+
+	public function format(array $spec): array {
+		$spec['openapi'] = '3.0.3';
+		$spec['servers'] = $this->mapServers( $spec );
+		unset( $spec['swagger'], $spec['host'], $spec['basePath'], $spec['schemes'] );
+
+		return $spec;
+	}
+
+	private function mapServers(array $spec): array {
+		$host     = isset( $spec['host'] ) ? $spec['host'] : '';
+		$basePath = isset( $spec['basePath'] ) ? $spec['basePath'] : '';
+		$schemes  = ! empty( $spec['schemes'] ) ? $spec['schemes'] : array( 'https' );
+
+		$servers = array();
+		foreach ( $schemes as $scheme ) {
+			$servers[] = array( 'url' => $scheme . '://' . $host . $basePath );
+		}
+
+		return $servers;
+	}
+}
+
 class SwaggerSpecRegistry {
 
 	private static function map(): array {
 		return array(
-			'2.0' => Spec20Formatter::class,
+			'2.0'   => Spec20Formatter::class,
+			'3.0.3' => Spec30Formatter::class,
 		);
 	}
 
