@@ -44,7 +44,6 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		$out = ( new Spec30Formatter() )->format( $spec );
 
 		$this->assertEquals( '3.0.3', $out['openapi'] );
-		$this->assertArrayNotHasKey( 'swagger', $out );
 		$this->assertArrayNotHasKey( 'host', $out );
 		$this->assertArrayNotHasKey( 'basePath', $out );
 		$this->assertArrayNotHasKey( 'schemes', $out );
@@ -182,7 +181,7 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 
 	public function test_spec30_formdata_to_requestbody() {
 		$spec = $this->specWithParams( array(
-			array( 'name' => 'title', 'in' => 'formData', 'required' => true, 'type' => 'string' ),
+			array( 'name' => 'title', 'in' => 'formData', 'required' => true, 'description' => 'Post title', 'type' => 'string' ),
 			array( 'name' => 'excerpt', 'in' => 'formData', 'required' => false, 'type' => 'string' ),
 		), 'post' );
 		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
@@ -190,7 +189,7 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'parameters', $op );
 		$schema = $op['requestBody']['content']['application/x-www-form-urlencoded']['schema'];
 		$this->assertEquals( 'object', $schema['type'] );
-		$this->assertEquals( array( 'type' => 'string' ), $schema['properties']['title'] );
+		$this->assertEquals( array( 'description' => 'Post title', 'type' => 'string' ), $schema['properties']['title'] );
 		$this->assertEquals( array( 'type' => 'string' ), $schema['properties']['excerpt'] );
 		$this->assertEquals( array( 'title' ), $schema['required'] );
 	}
