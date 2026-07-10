@@ -1,5 +1,5 @@
 <div class="wrap">
-	<h2><?php echo $page_title; ?></h2>
+	<h2><?php echo esc_html( $page_title ); ?></h2>
 	<form action="" method="post">
 		<?php wp_nonce_field( 'swagger_api_setting' ) ?>
 		<table class="form-table">

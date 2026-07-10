@@ -65,17 +65,21 @@ class WP_API_SwaggerUI
 
         global $wp_version;
 
+        $contact_email = apply_filters('swagger_api_contact_email', get_option('admin_email'));
+
+        $info = array(
+            'title' => get_option('blogname') . ' API',
+            'description' => get_option('blogdescription'),
+            'version' => apply_filters('swagger_api_info_version', $wp_version),
+        );
+        if (!empty($contact_email)) {
+            $info['contact'] = array('email' => $contact_email);
+        }
+
         // Canonical Swagger 2.0 pivot document. Each formatter stamps its own
         // version marker (swagger/openapi) and reshapes from here.
         $response = array(
-            'info' => array(
-                'title' => get_option('blogname') . ' API',
-                'description' => get_option('blogdescription'),
-                'version' => $wp_version,
-                'contact' => array(
-                    'email' => get_option('admin_email')
-                )
-            ),
+            'info' => $info,
             'host' => $this->getHost(),
             'basePath' => $this->getBasePath(),
             'tags' => [],
@@ -92,7 +96,11 @@ class WP_API_SwaggerUI
         }
 
         $formatter = SwaggerSpecRegistry::forVersion(get_option('swagger_api_spec_version', '2.0'));
-        wp_send_json($formatter->format($response));
+        $output    = $formatter->format($response);
+        if (empty($output['paths'])) {
+            $output['paths'] = new \stdClass();
+        }
+        wp_send_json($output);
     }
 
     public function getHost()
