@@ -12,7 +12,7 @@ class Spec20Formatter implements SwaggerSpecFormatter {
 	}
 
 	public function format(array $spec): array {
-		return $spec; // intermediate is already 2.0-shaped
+		return array( 'swagger' => $this->version() ) + $spec;
 	}
 }
 
@@ -23,9 +23,9 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 	}
 
 	public function format(array $spec): array {
-		$spec['openapi'] = '3.0.3';
 		$spec['servers'] = $this->mapServers( $spec );
-		unset( $spec['swagger'], $spec['host'], $spec['basePath'], $spec['schemes'] );
+		unset( $spec['host'], $spec['basePath'], $spec['schemes'] );
+		$spec = array( 'openapi' => $this->version() ) + $spec;
 
 		if ( isset( $spec['securityDefinitions'] ) ) {
 			$schemes = $this->mapSecuritySchemes( $spec['securityDefinitions'] );
@@ -94,21 +94,21 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 	}
 
 	private function mapParameter(array $param): array {
-		$schema = ( isset( $param['schema'] ) && is_array( $param['schema'] ) ) ? $param['schema'] : array();
-
-		foreach ( array( 'type', 'format', 'items', 'minimum', 'maximum' ) as $key ) {
-			if ( isset( $param[ $key ] ) && ! isset( $schema[ $key ] ) ) {
-				$schema[ $key ] = $param[ $key ];
-			}
-			unset( $param[ $key ] );
-		}
-
 		if ( isset( $param['collectionFormat'] ) ) {
 			if ( 'multi' === $param['collectionFormat'] ) {
 				$param['style']   = 'form';
 				$param['explode'] = true;
 			}
 			unset( $param['collectionFormat'] );
+		}
+
+		$keep   = array( 'name', 'in', 'description', 'required', 'deprecated', 'allowEmptyValue', 'style', 'explode', 'schema' );
+		$schema = $this->extractSchema( $param, $keep );
+
+		foreach ( array_keys( $param ) as $key ) {
+			if ( ! in_array( $key, $keep, true ) ) {
+				unset( $param[ $key ] );
+			}
 		}
 
 		if ( ! empty( $schema ) ) {
@@ -118,18 +118,26 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 		return $param;
 	}
 
+	private function extractSchema(array $param, array $keep): array {
+		$schema = ( isset( $param['schema'] ) && is_array( $param['schema'] ) ) ? $param['schema'] : array();
+		foreach ( array_keys( $param ) as $key ) {
+			if ( in_array( $key, $keep, true ) ) {
+				continue;
+			}
+			if ( ! isset( $schema[ $key ] ) ) {
+				$schema[ $key ] = $param[ $key ];
+			}
+		}
+		return $schema;
+	}
+
 	private function mapFormDataBody(array $form_data): array {
 		$properties = array();
 		$required   = array();
 
 		foreach ( $form_data as $param ) {
 			$name   = $param['name'];
-			$schema = ( isset( $param['schema'] ) && is_array( $param['schema'] ) ) ? $param['schema'] : array();
-			foreach ( array( 'type', 'format', 'items', 'minimum', 'maximum' ) as $key ) {
-				if ( isset( $param[ $key ] ) && ! isset( $schema[ $key ] ) ) {
-					$schema[ $key ] = $param[ $key ];
-				}
-			}
+			$schema = $this->extractSchema( $param, array( 'name', 'in', 'required', 'schema' ) );
 			if ( empty( $schema ) ) {
 				$schema = array( 'type' => 'string' );
 			}

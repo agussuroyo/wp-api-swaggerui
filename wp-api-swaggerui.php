@@ -65,8 +65,9 @@ class WP_API_SwaggerUI
 
         global $wp_version;
 
+        // Canonical Swagger 2.0 pivot document. Each formatter stamps its own
+        // version marker (swagger/openapi) and reshapes from here.
         $response = array(
-            'swagger' => '2.0',
             'info' => array(
                 'title' => get_option('blogname') . ' API',
                 'description' => get_option('blogdescription'),
