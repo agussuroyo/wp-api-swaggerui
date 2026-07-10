@@ -241,17 +241,13 @@ class WP_API_SwaggerUI
                     $consumes[] = ['application/json'];
                 }
 
-                if (isset($args['tags']) && is_array($args['tags'])) {
-                    $tags = $args['tags'];
-                }
-
                 $responses =$this->getResponses($methodEndpoint);
                 if (isset($arg['responses'])) {
                     $responses = $arg['responses'];
                 }
 
                 $conf = array(
-                    'tags' => $tags,
+                    'tags' => isset($arg['tags']) ? (array) $arg['tags'] : $tags,
                     'summary' => isset($arg['summary']) ? $arg['summary'] : '',
                     'description' => isset($arg['description']) ? $arg['description'] : '',
                     'consumes' => $consumes,
