@@ -221,6 +221,69 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		);
 	}
 
+	public function test_spec30_response_schema_to_content() {
+		$spec = array(
+			'host'     => 'e.com',
+			'basePath' => '/wp-json',
+			'schemes'  => array( 'https' ),
+			'paths'    => array(
+				'/x' => array(
+					'get' => array(
+						'produces'  => array( 'application/json' ),
+						'responses' => array(
+							'200' => array( 'description' => 'OK', 'schema' => array( 'type' => 'object' ) ),
+						),
+					),
+				),
+			),
+		);
+		$op = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ) );
+
+		$this->assertArrayNotHasKey( 'schema', $op['responses']['200'] );
+		$this->assertEquals( array( 'type' => 'object' ), $op['responses']['200']['content']['application/json']['schema'] );
+		$this->assertEquals( 'OK', $op['responses']['200']['description'] );
+	}
+
+	public function test_spec30_description_only_response_unchanged() {
+		$spec = array(
+			'host'     => 'e.com',
+			'basePath' => '/wp-json',
+			'schemes'  => array( 'https' ),
+			'paths'    => array(
+				'/x' => array(
+					'get' => array(
+						'responses' => array( '200' => array( 'description' => 'OK' ) ),
+					),
+				),
+			),
+		);
+		$op = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ) );
+
+		$this->assertEquals( array( '200' => array( 'description' => 'OK' ) ), $op['responses'] );
+	}
+
+	public function test_spec30_body_required_on_requestbody() {
+		$spec = $this->specWithParams( array(
+			array( 'name' => 'payload', 'in' => 'body', 'required' => true, 'schema' => array( 'type' => 'object' ) ),
+		), 'post' );
+		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
+
+		$this->assertTrue( $op['requestBody']['required'] );
+		$this->assertEquals(
+			array( 'type' => 'object' ),
+			$op['requestBody']['content']['application/json']['schema']
+		);
+	}
+
+	public function test_spec30_body_not_required_omits_requestbody_required() {
+		$spec = $this->specWithParams( array(
+			array( 'name' => 'payload', 'in' => 'body', 'required' => false, 'schema' => array( 'type' => 'object' ) ),
+		), 'post' );
+		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
+
+		$this->assertArrayNotHasKey( 'required', $op['requestBody'] );
+	}
+
 	public function test_setting_save_whitelists_version() {
 		if ( ! class_exists( 'SwaggerSetting' ) ) {
 			require_once dirname( __DIR__ ) . '/swaggersetting.php';
