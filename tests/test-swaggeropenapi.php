@@ -160,6 +160,28 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		);
 	}
 
+	public function test_spec30_csv_array_param_explode_false() {
+		$spec  = $this->specWithParams( array(
+			array( 'name' => 'author', 'in' => 'query', 'required' => false, 'type' => 'array', 'items' => array( 'type' => 'integer' ) ),
+		) );
+		$param = $this->firstParam( ( new Spec30Formatter() )->format( $spec ) );
+
+		$this->assertEquals( 'form', $param['style'] );
+		$this->assertFalse( $param['explode'] );
+		$this->assertEquals( 'array', $param['schema']['type'] );
+		$this->assertArrayNotHasKey( 'collectionFormat', $param );
+	}
+
+	public function test_spec30_scalar_param_no_style() {
+		$spec  = $this->specWithParams( array(
+			array( 'name' => 'search', 'in' => 'query', 'required' => false, 'type' => 'string' ),
+		) );
+		$param = $this->firstParam( ( new Spec30Formatter() )->format( $spec ) );
+
+		$this->assertArrayNotHasKey( 'style', $param );
+		$this->assertArrayNotHasKey( 'explode', $param );
+	}
+
 	public function test_spec30_unknown_param_keyword_goes_to_schema() {
 		$spec  = $this->specWithParams( array(
 			array( 'name' => 'search', 'in' => 'query', 'required' => false, 'type' => 'string', 'pattern' => '^x' ),
@@ -206,6 +228,29 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 			$property
 		);
 		$this->assertArrayNotHasKey( 'collectionFormat', $property );
+	}
+
+	public function test_spec30_formdata_required_body() {
+		$spec = $this->specWithParams( array(
+			array( 'name' => 'title', 'in' => 'formData', 'required' => true, 'type' => 'string' ),
+			array( 'name' => 'excerpt', 'in' => 'formData', 'required' => false, 'type' => 'string' ),
+		), 'post' );
+		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
+
+		$this->assertTrue( $op['requestBody']['required'] );
+		$this->assertEquals(
+			array( 'title' ),
+			$op['requestBody']['content']['application/x-www-form-urlencoded']['schema']['required']
+		);
+	}
+
+	public function test_spec30_formdata_optional_body_no_required() {
+		$spec = $this->specWithParams( array(
+			array( 'name' => 'excerpt', 'in' => 'formData', 'required' => false, 'type' => 'string' ),
+		), 'post' );
+		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
+
+		$this->assertArrayNotHasKey( 'required', $op['requestBody'] );
 	}
 
 	public function test_spec30_body_param_to_json_requestbody() {
