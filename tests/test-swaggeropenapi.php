@@ -3,9 +3,11 @@
 class TestSwaggerOpenApi extends WP_UnitTestCase {
 
 	public function test_spec20_passthrough() {
-		$spec = array( 'swagger' => '2.0', 'paths' => array( '/x' => array() ) );
+		$spec = array( 'paths' => array( '/x' => array() ) );
 		$f    = new Spec20Formatter();
-		$this->assertSame( $spec, $f->format( $spec ) );
+		$out  = $f->format( $spec );
+		$this->assertEquals( '2.0', $out['swagger'] );
+		$this->assertEquals( array( '/x' => array() ), $out['paths'] );
 		$this->assertEquals( '2.0', $f->version() );
 	}
 
@@ -23,9 +25,15 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		$this->assertInstanceOf( Spec30Formatter::class, SwaggerSpecRegistry::forVersion( '3.0.3' ) );
 	}
 
+	public function test_spec30_openapi_is_first_key() {
+		$spec = array( 'info' => array( 'title' => 'T' ), 'paths' => array() );
+		$out  = ( new Spec30Formatter() )->format( $spec );
+
+		$this->assertEquals( 'openapi', array_key_first( $out ) );
+	}
+
 	public function test_spec30_top_level() {
 		$spec = array(
-			'swagger'  => '2.0',
 			'info'     => array( 'title' => 'T' ),
 			'host'     => 'example.com',
 			'basePath' => '/wp-json',
@@ -48,7 +56,6 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 
 	public function test_spec30_security_schemes() {
 		$spec = array(
-			'swagger'             => '2.0',
 			'host'                => 'e.com',
 			'basePath'            => '/wp-json',
 			'schemes'             => array( 'https' ),
@@ -80,14 +87,13 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 	}
 
 	public function test_spec30_no_security_definitions() {
-		$spec = array( 'swagger' => '2.0', 'host' => 'e.com', 'basePath' => '/wp-json', 'schemes' => array( 'https' ) );
+		$spec = array( 'host' => 'e.com', 'basePath' => '/wp-json', 'schemes' => array( 'https' ) );
 		$out  = ( new Spec30Formatter() )->format( $spec );
 		$this->assertArrayNotHasKey( 'components', $out );
 	}
 
 	private function specWithParams( array $params, string $method = 'get' ): array {
 		return array(
-			'swagger'  => '2.0',
 			'host'     => 'e.com',
 			'basePath' => '/wp-json',
 			'schemes'  => array( 'https' ),
@@ -153,6 +159,16 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 			array( 'type' => 'string', 'enum' => array( 'a', 'b' ), 'default' => 'a' ),
 			$param['schema']['items']
 		);
+	}
+
+	public function test_spec30_unknown_param_keyword_goes_to_schema() {
+		$spec  = $this->specWithParams( array(
+			array( 'name' => 'search', 'in' => 'query', 'required' => false, 'type' => 'string', 'pattern' => '^x' ),
+		) );
+		$param = $this->firstParam( ( new Spec30Formatter() )->format( $spec ) );
+
+		$this->assertArrayNotHasKey( 'pattern', $param );
+		$this->assertEquals( '^x', $param['schema']['pattern'] );
 	}
 
 	public function test_spec30_preexisting_schema_not_clobbered() {
