@@ -230,6 +230,46 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'collectionFormat', $property );
 	}
 
+	public function test_spec30_formdata_csv_array_encoding() {
+		$spec = $this->specWithParams( array(
+			array( 'name' => 'categories', 'in' => 'formData', 'required' => false, 'type' => 'array', 'items' => array( 'type' => 'integer' ) ),
+		), 'post' );
+		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
+
+		$entry = $op['requestBody']['content']['application/x-www-form-urlencoded'];
+		$this->assertEquals(
+			array( 'style' => 'form', 'explode' => false ),
+			$entry['encoding']['categories']
+		);
+		$this->assertEquals(
+			array( 'type' => 'array', 'items' => array( 'type' => 'integer' ) ),
+			$entry['schema']['properties']['categories']
+		);
+	}
+
+	public function test_spec30_formdata_multi_array_encoding() {
+		$spec = $this->specWithParams( array(
+			array( 'name' => 'categories', 'in' => 'formData', 'required' => false, 'type' => 'array', 'items' => array( 'type' => 'integer' ), 'collectionFormat' => 'multi' ),
+		), 'post' );
+		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
+
+		$entry = $op['requestBody']['content']['application/x-www-form-urlencoded'];
+		$this->assertEquals(
+			array( 'style' => 'form', 'explode' => true ),
+			$entry['encoding']['categories']
+		);
+	}
+
+	public function test_spec30_formdata_scalar_no_encoding() {
+		$spec = $this->specWithParams( array(
+			array( 'name' => 'title', 'in' => 'formData', 'required' => true, 'type' => 'string' ),
+		), 'post' );
+		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
+
+		$entry = $op['requestBody']['content']['application/x-www-form-urlencoded'];
+		$this->assertArrayNotHasKey( 'encoding', $entry );
+	}
+
 	public function test_spec30_formdata_required_body() {
 		$spec = $this->specWithParams( array(
 			array( 'name' => 'title', 'in' => 'formData', 'required' => true, 'type' => 'string' ),

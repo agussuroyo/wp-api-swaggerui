@@ -187,17 +187,23 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 	private function mapFormDataBody(array $form_data, array $media): array {
 		$properties = array();
 		$required   = array();
+		$encoding   = array();
 
 		foreach ( $form_data as $param ) {
-			$name   = $param['name'];
-			$schema = $this->extractSchema( $param, array( 'name', 'in', 'required', 'schema', 'collectionFormat' ) );
-			$schema = $this->normalizeFileSchema( $schema );
+			$name              = $param['name'];
+			$collection_format = isset( $param['collectionFormat'] ) ? $param['collectionFormat'] : null;
+			$schema            = $this->extractSchema( $param, array( 'name', 'in', 'required', 'schema', 'collectionFormat' ) );
+			$schema            = $this->normalizeFileSchema( $schema );
 			if ( empty( $schema ) ) {
 				$schema = array( 'type' => 'string' );
 			}
 			$properties[ $name ] = $schema;
 			if ( ! empty( $param['required'] ) ) {
 				$required[] = $name;
+			}
+			if ( isset( $schema['type'] ) && 'array' === $schema['type'] ) {
+				$style             = $this->arrayStyle( $collection_format, 'query' );
+				$encoding[ $name ] = array( 'style' => $style[0], 'explode' => $style[1] );
 			}
 		}
 
@@ -208,7 +214,11 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 
 		$content = array();
 		foreach ( $media as $m ) {
-			$content[ $m ] = array( 'schema' => $body );
+			$entry = array( 'schema' => $body );
+			if ( ! empty( $encoding ) ) {
+				$entry['encoding'] = $encoding;
+			}
+			$content[ $m ] = $entry;
 		}
 
 		$request_body = array( 'content' => $content );
