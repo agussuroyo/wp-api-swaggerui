@@ -203,6 +203,15 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'collectionFormat', $param );
 	}
 
+	public function test_spec30_array_without_items_gets_default() {
+		$spec  = $this->specWithParams( array(
+			array( 'name' => 'status', 'in' => 'query', 'required' => false, 'type' => 'array' ),
+		) );
+		$param = $this->firstParam( ( new Spec30Formatter() )->format( $spec ) );
+
+		$this->assertEquals( array( 'type' => 'string' ), $param['schema']['items'] );
+	}
+
 	public function test_spec30_scalar_param_no_style() {
 		$spec  = $this->specWithParams( array(
 			array( 'name' => 'search', 'in' => 'query', 'required' => false, 'type' => 'string' ),
@@ -370,6 +379,34 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'schema', $op['responses']['200'] );
 		$this->assertEquals( array( 'type' => 'object' ), $op['responses']['200']['content']['application/json']['schema'] );
 		$this->assertEquals( 'OK', $op['responses']['200']['description'] );
+	}
+
+	public function test_spec30_response_examples_to_content() {
+		$spec = array(
+			'host'     => 'e.com',
+			'basePath' => '/wp-json',
+			'schemes'  => array( 'https' ),
+			'paths'    => array(
+				'/x' => array(
+					'get' => array(
+						'produces'  => array( 'application/json' ),
+						'responses' => array(
+							'200' => array(
+								'description' => 'OK',
+								'schema'      => array( 'type' => 'object' ),
+								'examples'    => array( 'application/json' => array( 'a' => 1 ) ),
+							),
+						),
+					),
+				),
+			),
+		);
+		$op = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ) );
+
+		$this->assertArrayNotHasKey( 'schema', $op['responses']['200'] );
+		$this->assertArrayNotHasKey( 'examples', $op['responses']['200'] );
+		$this->assertEquals( array( 'type' => 'object' ), $op['responses']['200']['content']['application/json']['schema'] );
+		$this->assertEquals( array( 'a' => 1 ), $op['responses']['200']['content']['application/json']['example'] );
 	}
 
 	public function test_spec30_description_only_response_unchanged() {

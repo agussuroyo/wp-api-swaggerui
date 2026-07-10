@@ -96,11 +96,8 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 			$media             = ! empty( $consumes ) ? $consumes : array( 'application/x-www-form-urlencoded' );
 			$op['requestBody'] = $this->mapFormDataBody( $form_data, $media );
 		} elseif ( null !== $body ) {
-			$media   = ! empty( $consumes ) ? $consumes : array( 'application/json' );
-			$content = array();
-			foreach ( $media as $m ) {
-				$content[ $m ] = array( 'schema' => $body );
-			}
+			$media        = ! empty( $consumes ) ? $consumes : array( 'application/json' );
+			$content      = $this->contentFor( $media, $body );
 			$request_body = array( 'content' => $content );
 			if ( null !== $body_description ) {
 				$request_body['description'] = $body_description;
@@ -116,16 +113,32 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 
 	private function mapResponses(array $responses, array $produces): array {
 		foreach ( $responses as $code => $response ) {
-			if ( is_array( $response ) && isset( $response['schema'] ) ) {
-				$schema = $response['schema'];
-				unset( $response['schema'] );
-				$content = array();
-				foreach ( $produces as $media ) {
-					$content[ $media ] = array( 'schema' => $schema );
-				}
-				$response['content'] = $content;
-				$responses[ $code ]  = $response;
+			if ( ! is_array( $response ) ) {
+				continue;
 			}
+			$schema   = isset( $response['schema'] ) ? $response['schema'] : null;
+			$examples = ( isset( $response['examples'] ) && is_array( $response['examples'] ) ) ? $response['examples'] : array();
+			if ( null === $schema && empty( $examples ) ) {
+				continue;
+			}
+			unset( $response['schema'], $response['examples'] );
+			$content = array();
+			foreach ( $produces as $m ) {
+				$entry = array();
+				if ( null !== $schema ) {
+					$entry['schema'] = $schema;
+				}
+				if ( isset( $examples[ $m ] ) ) {
+					$entry['example'] = $examples[ $m ];
+				}
+				if ( ! empty( $entry ) ) {
+					$content[ $m ] = $entry;
+				}
+			}
+			if ( ! empty( $content ) ) {
+				$response['content'] = $content;
+			}
+			$responses[ $code ] = $response;
 		}
 		return $responses;
 	}
@@ -186,7 +199,18 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 				$schema[ $key ] = $param[ $key ];
 			}
 		}
+		if ( isset( $schema['type'] ) && 'array' === $schema['type'] && ! isset( $schema['items'] ) ) {
+			$schema['items'] = array( 'type' => 'string' );
+		}
 		return $schema;
+	}
+
+	private function contentFor(array $media, array $schema): array {
+		$content = array();
+		foreach ( $media as $m ) {
+			$content[ $m ] = array( 'schema' => $schema );
+		}
+		return $content;
 	}
 
 	private function mapFormDataBody(array $form_data, array $media): array {
@@ -222,13 +246,13 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 
 		$form_media = array( 'application/x-www-form-urlencoded', 'multipart/form-data' );
 
-		$content = array();
-		foreach ( $media as $m ) {
-			$entry = array( 'schema' => $body );
-			if ( ! empty( $encoding ) && in_array( $m, $form_media, true ) ) {
-				$entry['encoding'] = $encoding;
+		$content = $this->contentFor( $media, $body );
+		if ( ! empty( $encoding ) ) {
+			foreach ( $form_media as $fm ) {
+				if ( isset( $content[ $fm ] ) ) {
+					$content[ $fm ]['encoding'] = $encoding;
+				}
 			}
-			$content[ $m ] = $entry;
 		}
 
 		$request_body = array( 'content' => $content );
