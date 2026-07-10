@@ -67,18 +67,20 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 			return $op;
 		}
 
-		$parameters    = array();
-		$form_data     = array();
-		$body          = null;
-		$body_required = false;
+		$parameters       = array();
+		$form_data        = array();
+		$body             = null;
+		$body_required    = false;
+		$body_description = null;
 
 		foreach ( $op['parameters'] as $param ) {
 			$in = isset( $param['in'] ) ? $param['in'] : 'query';
 			if ( 'formData' === $in ) {
 				$form_data[] = $param;
 			} elseif ( 'body' === $in ) {
-				$body          = isset( $param['schema'] ) ? $param['schema'] : array( 'type' => 'object' );
-				$body_required = ! empty( $param['required'] );
+				$body             = isset( $param['schema'] ) ? $param['schema'] : array( 'type' => 'object' );
+				$body_required    = ! empty( $param['required'] );
+				$body_description = ( isset( $param['description'] ) && '' !== $param['description'] ) ? $param['description'] : null;
 			} else {
 				$parameters[] = $this->mapParameter( $param );
 			}
@@ -100,6 +102,9 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 				$content[ $m ] = array( 'schema' => $body );
 			}
 			$request_body = array( 'content' => $content );
+			if ( null !== $body_description ) {
+				$request_body['description'] = $body_description;
+			}
 			if ( $body_required ) {
 				$request_body['required'] = true;
 			}

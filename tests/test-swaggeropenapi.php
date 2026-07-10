@@ -369,6 +369,28 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'required', $op['requestBody'] );
 	}
 
+	public function test_spec30_body_description_carried() {
+		$spec = $this->specWithParams( array(
+			array( 'name' => 'payload', 'in' => 'body', 'required' => true, 'description' => 'Created user object', 'schema' => array( 'type' => 'object' ) ),
+		), 'post', array( 'application/json' ) );
+		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
+
+		$this->assertEquals( 'Created user object', $op['requestBody']['description'] );
+		$this->assertEquals(
+			array( 'type' => 'object' ),
+			$op['requestBody']['content']['application/json']['schema']
+		);
+	}
+
+	public function test_spec30_body_no_description_omitted() {
+		$spec = $this->specWithParams( array(
+			array( 'name' => 'payload', 'in' => 'body', 'required' => true, 'schema' => array( 'type' => 'object' ) ),
+		), 'post' );
+		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
+
+		$this->assertArrayNotHasKey( 'description', $op['requestBody'] );
+	}
+
 	public function test_spec30_formdata_consumes_override() {
 		$spec = $this->specWithParams( array(
 			array( 'name' => 'title', 'in' => 'formData', 'required' => true, 'type' => 'string' ),
