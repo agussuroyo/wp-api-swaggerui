@@ -187,4 +187,26 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 			$op['requestBody']['content']['application/json']['schema']
 		);
 	}
+
+	public function test_setting_save_whitelists_version() {
+		if ( ! class_exists( 'SwaggerSetting' ) ) {
+			require_once dirname( __DIR__ ) . '/swaggersetting.php';
+		}
+
+		$admin = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin );
+
+		$setting = new SwaggerSetting();
+
+		$_POST['_wpnonce']                 = wp_create_nonce( 'swagger_api_setting' );
+		$_POST['swagger_api_spec_version'] = '3.0.3';
+		$setting->saveSetting();
+		$this->assertEquals( '3.0.3', get_option( 'swagger_api_spec_version' ) );
+
+		$_POST['swagger_api_spec_version'] = 'bogus';
+		$setting->saveSetting();
+		$this->assertEquals( '3.0.3', get_option( 'swagger_api_spec_version' ), 'invalid value must be rejected' );
+
+		unset( $_POST['_wpnonce'], $_POST['swagger_api_spec_version'] );
+	}
 }
