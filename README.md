@@ -69,6 +69,7 @@ register_rest_route(
         'callback'             => $service->get_callback(),
         'summary'              => 'Find pet by ID',
         'description'          => 'Returns a single pet',
+        'tags'                 => ['Pets'],
         'produces'             => ['application/json', 'application/xml'],
         'responses'            => [
             '200' => [

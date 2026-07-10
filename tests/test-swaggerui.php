@@ -110,12 +110,35 @@ class TestSwaggerUI extends WP_UnitTestCase {
 
 	public function test_getResponses() {
 		$responses = $this->ui->getResponses( '/sample/{id}' );
-		
+
 		$this->assertTrue( is_array( $responses ) );
-		
+
 		$this->assertArrayHasKey( '200', $responses );
 		$this->assertArrayHasKey( '400', $responses );
 		$this->assertArrayHasKey( '404', $responses );
+	}
+
+	public function test_getMethodsFromArgs_custom_tags() {
+		$args = [
+			[
+				'methods'      => [ 'GET' => true ],
+				'tags'         => [ 'Pets' ],
+				'accept_json'  => false,
+			],
+		];
+		$methods = $this->ui->getMethodsFromArgs( '/pets', '/wp/v2/pets', $args );
+		$this->assertEquals( [ 'Pets' ], $methods['get']['tags'] );
+	}
+
+	public function test_getMethodsFromArgs_default_tags() {
+		$args = [
+			[
+				'methods'      => [ 'GET' => true ],
+				'accept_json'  => false,
+			],
+		];
+		$methods = $this->ui->getMethodsFromArgs( '/pets', '/wp/v2/pets', $args );
+		$this->assertEquals( [ 'pets' ], $methods['get']['tags'] );
 	}
 
 }
