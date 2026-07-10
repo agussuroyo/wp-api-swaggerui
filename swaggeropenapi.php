@@ -137,7 +137,7 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 
 		foreach ( $form_data as $param ) {
 			$name   = $param['name'];
-			$schema = $this->extractSchema( $param, array( 'name', 'in', 'required', 'schema' ) );
+			$schema = $this->extractSchema( $param, array( 'name', 'in', 'required', 'schema', 'collectionFormat' ) );
 			if ( empty( $schema ) ) {
 				$schema = array( 'type' => 'string' );
 			}

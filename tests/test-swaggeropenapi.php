@@ -194,6 +194,20 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		$this->assertEquals( array( 'title' ), $schema['required'] );
 	}
 
+	public function test_spec30_formdata_drops_collectionformat() {
+		$spec = $this->specWithParams( array(
+			array( 'name' => 'status', 'in' => 'formData', 'required' => false, 'type' => 'array', 'items' => array( 'type' => 'string', 'enum' => array( 'open', 'closed' ) ), 'collectionFormat' => 'multi' ),
+		), 'post' );
+		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
+
+		$property = $op['requestBody']['content']['application/x-www-form-urlencoded']['schema']['properties']['status'];
+		$this->assertEquals(
+			array( 'type' => 'array', 'items' => array( 'type' => 'string', 'enum' => array( 'open', 'closed' ) ) ),
+			$property
+		);
+		$this->assertArrayNotHasKey( 'collectionFormat', $property );
+	}
+
 	public function test_spec30_body_param_to_json_requestbody() {
 		$spec = $this->specWithParams( array(
 			array( 'name' => 'payload', 'in' => 'body', 'required' => true, 'schema' => array( 'type' => 'object' ) ),
