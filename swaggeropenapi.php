@@ -62,18 +62,32 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 		}
 
 		$parameters = array();
+		$form_data  = array();
+		$body       = null;
+
 		foreach ( $op['parameters'] as $param ) {
 			$in = isset( $param['in'] ) ? $param['in'] : 'query';
-			if ( 'formData' === $in || 'body' === $in ) {
-				continue; // handled in Task 5
+			if ( 'formData' === $in ) {
+				$form_data[] = $param;
+			} elseif ( 'body' === $in ) {
+				$body = isset( $param['schema'] ) ? $param['schema'] : array( 'type' => 'object' );
+			} else {
+				$parameters[] = $this->mapParameter( $param );
 			}
-			$parameters[] = $this->mapParameter( $param );
 		}
 
 		if ( empty( $parameters ) ) {
 			unset( $op['parameters'] );
 		} else {
 			$op['parameters'] = $parameters;
+		}
+
+		if ( ! empty( $form_data ) ) {
+			$op['requestBody'] = $this->mapFormDataBody( $form_data );
+		} elseif ( null !== $body ) {
+			$op['requestBody'] = array(
+				'content' => array( 'application/json' => array( 'schema' => $body ) ),
+			);
 		}
 
 		return $op;
@@ -102,6 +116,39 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 		}
 
 		return $param;
+	}
+
+	private function mapFormDataBody(array $form_data): array {
+		$properties = array();
+		$required   = array();
+
+		foreach ( $form_data as $param ) {
+			$name   = $param['name'];
+			$schema = ( isset( $param['schema'] ) && is_array( $param['schema'] ) ) ? $param['schema'] : array();
+			foreach ( array( 'type', 'format', 'items', 'minimum', 'maximum' ) as $key ) {
+				if ( isset( $param[ $key ] ) && ! isset( $schema[ $key ] ) ) {
+					$schema[ $key ] = $param[ $key ];
+				}
+			}
+			if ( empty( $schema ) ) {
+				$schema = array( 'type' => 'string' );
+			}
+			$properties[ $name ] = $schema;
+			if ( ! empty( $param['required'] ) ) {
+				$required[] = $name;
+			}
+		}
+
+		$body = array( 'type' => 'object', 'properties' => $properties );
+		if ( ! empty( $required ) ) {
+			$body['required'] = $required;
+		}
+
+		return array(
+			'content' => array(
+				'application/x-www-form-urlencoded' => array( 'schema' => $body ),
+			),
+		);
 	}
 
 	private function mapSecuritySchemes(array $defs): array {

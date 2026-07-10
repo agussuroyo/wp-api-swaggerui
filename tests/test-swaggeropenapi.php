@@ -159,4 +159,32 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 
 		$this->assertEquals( array( 'type' => 'integer', 'format' => 'int64' ), $param['schema'] );
 	}
+
+	public function test_spec30_formdata_to_requestbody() {
+		$spec = $this->specWithParams( array(
+			array( 'name' => 'title', 'in' => 'formData', 'required' => true, 'type' => 'string' ),
+			array( 'name' => 'excerpt', 'in' => 'formData', 'required' => false, 'type' => 'string' ),
+		), 'post' );
+		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
+
+		$this->assertArrayNotHasKey( 'parameters', $op );
+		$schema = $op['requestBody']['content']['application/x-www-form-urlencoded']['schema'];
+		$this->assertEquals( 'object', $schema['type'] );
+		$this->assertEquals( array( 'type' => 'string' ), $schema['properties']['title'] );
+		$this->assertEquals( array( 'type' => 'string' ), $schema['properties']['excerpt'] );
+		$this->assertEquals( array( 'title' ), $schema['required'] );
+	}
+
+	public function test_spec30_body_param_to_json_requestbody() {
+		$spec = $this->specWithParams( array(
+			array( 'name' => 'payload', 'in' => 'body', 'required' => true, 'schema' => array( 'type' => 'object' ) ),
+		), 'post' );
+		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
+
+		$this->assertArrayNotHasKey( 'parameters', $op );
+		$this->assertEquals(
+			array( 'type' => 'object' ),
+			$op['requestBody']['content']['application/json']['schema']
+		);
+	}
 }
