@@ -241,7 +241,7 @@ class WP_API_SwaggerUI
                 }
 
                 if ($arg['accept_json']) {
-                    $consumes[] = ['application/json'];
+                    $consumes[] = 'application/json';
                 }
 
                 $responses =$this->getResponses($methodEndpoint);
