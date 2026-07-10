@@ -45,4 +45,39 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		$this->assertSame( array(), $out['tags'] );
 		$this->assertEquals( array( 'title' => 'T' ), $out['info'] );
 	}
+
+	public function test_spec30_security_schemes() {
+		$spec = array(
+			'swagger'             => '2.0',
+			'host'                => 'e.com',
+			'basePath'            => '/wp-json',
+			'schemes'             => array( 'https' ),
+			'securityDefinitions' => array(
+				'basic'  => array( 'type' => 'basic' ),
+				'bearer' => array(
+					'type'        => 'apiKey',
+					'in'          => 'header',
+					'name'        => 'Authorization',
+					'description' => 'x',
+				),
+			),
+		);
+		$out = ( new Spec30Formatter() )->format( $spec );
+
+		$this->assertArrayNotHasKey( 'securityDefinitions', $out );
+		$this->assertEquals(
+			array( 'type' => 'http', 'scheme' => 'basic' ),
+			$out['components']['securitySchemes']['basic']
+		);
+		$this->assertEquals(
+			array( 'type' => 'http', 'scheme' => 'bearer', 'description' => 'x' ),
+			$out['components']['securitySchemes']['bearer']
+		);
+	}
+
+	public function test_spec30_no_security_definitions() {
+		$spec = array( 'swagger' => '2.0', 'host' => 'e.com', 'basePath' => '/wp-json', 'schemes' => array( 'https' ) );
+		$out  = ( new Spec30Formatter() )->format( $spec );
+		$this->assertArrayNotHasKey( 'components', $out );
+	}
 }
