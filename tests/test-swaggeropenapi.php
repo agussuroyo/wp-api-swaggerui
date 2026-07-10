@@ -80,4 +80,83 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		$out  = ( new Spec30Formatter() )->format( $spec );
 		$this->assertArrayNotHasKey( 'components', $out );
 	}
+
+	private function specWithParams( array $params, string $method = 'get' ): array {
+		return array(
+			'swagger'  => '2.0',
+			'host'     => 'e.com',
+			'basePath' => '/wp-json',
+			'schemes'  => array( 'https' ),
+			'paths'    => array(
+				'/x' => array(
+					$method => array(
+						'tags'       => array( 'x' ),
+						'consumes'   => array( 'application/x-www-form-urlencoded' ),
+						'produces'   => array( 'application/json' ),
+						'parameters' => $params,
+						'responses'  => array( '200' => array( 'description' => 'OK' ) ),
+					),
+				),
+			),
+		);
+	}
+
+	private function firstOperation( array $out, string $method = 'get' ): array {
+		return $out['paths']['/x'][ $method ];
+	}
+
+	private function firstParam( array $out ): array {
+		return $this->firstOperation( $out )['parameters'][0];
+	}
+
+	public function test_spec30_drops_consumes_produces() {
+		$op = $this->firstOperation( ( new Spec30Formatter() )->format( $this->specWithParams( array() ) ) );
+		$this->assertArrayNotHasKey( 'consumes', $op );
+		$this->assertArrayNotHasKey( 'produces', $op );
+		$this->assertEquals( array( '200' => array( 'description' => 'OK' ) ), $op['responses'] );
+	}
+
+	public function test_spec30_scalar_param_to_schema() {
+		$spec  = $this->specWithParams( array(
+			array( 'name' => 'search', 'in' => 'query', 'description' => '', 'required' => false, 'type' => 'string', 'format' => 'x' ),
+		) );
+		$param = $this->firstParam( ( new Spec30Formatter() )->format( $spec ) );
+
+		$this->assertArrayNotHasKey( 'type', $param );
+		$this->assertArrayNotHasKey( 'format', $param );
+		$this->assertEquals( array( 'type' => 'string', 'format' => 'x' ), $param['schema'] );
+		$this->assertEquals( 'query', $param['in'] );
+	}
+
+	public function test_spec30_enum_array_param() {
+		$spec  = $this->specWithParams( array(
+			array(
+				'name'             => 'status',
+				'in'               => 'query',
+				'required'         => false,
+				'type'             => 'array',
+				'items'            => array( 'type' => 'string', 'enum' => array( 'a', 'b' ), 'default' => 'a' ),
+				'collectionFormat' => 'multi',
+			),
+		) );
+		$param = $this->firstParam( ( new Spec30Formatter() )->format( $spec ) );
+
+		$this->assertArrayNotHasKey( 'collectionFormat', $param );
+		$this->assertEquals( 'form', $param['style'] );
+		$this->assertTrue( $param['explode'] );
+		$this->assertEquals( 'array', $param['schema']['type'] );
+		$this->assertEquals(
+			array( 'type' => 'string', 'enum' => array( 'a', 'b' ), 'default' => 'a' ),
+			$param['schema']['items']
+		);
+	}
+
+	public function test_spec30_preexisting_schema_not_clobbered() {
+		$spec  = $this->specWithParams( array(
+			array( 'name' => 'id', 'in' => 'path', 'required' => true, 'type' => 'integer', 'schema' => array( 'type' => 'integer', 'format' => 'int64' ) ),
+		) );
+		$param = $this->firstParam( ( new Spec30Formatter() )->format( $spec ) );
+
+		$this->assertEquals( array( 'type' => 'integer', 'format' => 'int64' ), $param['schema'] );
+	}
 }
