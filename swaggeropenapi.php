@@ -55,22 +55,29 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 	}
 
 	private function mapOperation(array $op): array {
+		$produces = ! empty( $op['produces'] ) ? (array) $op['produces'] : array( 'application/json' );
 		unset( $op['consumes'], $op['produces'] );
+
+		if ( isset( $op['responses'] ) ) {
+			$op['responses'] = $this->mapResponses( $op['responses'], $produces );
+		}
 
 		if ( ! isset( $op['parameters'] ) ) {
 			return $op;
 		}
 
-		$parameters = array();
-		$form_data  = array();
-		$body       = null;
+		$parameters    = array();
+		$form_data     = array();
+		$body          = null;
+		$body_required = false;
 
 		foreach ( $op['parameters'] as $param ) {
 			$in = isset( $param['in'] ) ? $param['in'] : 'query';
 			if ( 'formData' === $in ) {
 				$form_data[] = $param;
 			} elseif ( 'body' === $in ) {
-				$body = isset( $param['schema'] ) ? $param['schema'] : array( 'type' => 'object' );
+				$body          = isset( $param['schema'] ) ? $param['schema'] : array( 'type' => 'object' );
+				$body_required = ! empty( $param['required'] );
 			} else {
 				$parameters[] = $this->mapParameter( $param );
 			}
@@ -85,12 +92,32 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 		if ( ! empty( $form_data ) ) {
 			$op['requestBody'] = $this->mapFormDataBody( $form_data );
 		} elseif ( null !== $body ) {
-			$op['requestBody'] = array(
+			$request_body = array(
 				'content' => array( 'application/json' => array( 'schema' => $body ) ),
 			);
+			if ( $body_required ) {
+				$request_body['required'] = true;
+			}
+			$op['requestBody'] = $request_body;
 		}
 
 		return $op;
+	}
+
+	private function mapResponses(array $responses, array $produces): array {
+		foreach ( $responses as $code => $response ) {
+			if ( is_array( $response ) && isset( $response['schema'] ) ) {
+				$schema = $response['schema'];
+				unset( $response['schema'] );
+				$content = array();
+				foreach ( $produces as $media ) {
+					$content[ $media ] = array( 'schema' => $schema );
+				}
+				$response['content'] = $content;
+				$responses[ $code ]  = $response;
+			}
+		}
+		return $responses;
 	}
 
 	private function mapParameter(array $param): array {
