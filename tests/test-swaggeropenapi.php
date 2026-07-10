@@ -70,7 +70,11 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 			$out['components']['securitySchemes']['basic']
 		);
 		$this->assertEquals(
-			array( 'type' => 'http', 'scheme' => 'bearer', 'description' => 'x' ),
+			array(
+				'type'        => 'http',
+				'scheme'      => 'bearer',
+				'description' => 'Enter your token; the "Bearer" prefix is added automatically.',
+			),
 			$out['components']['securitySchemes']['bearer']
 		);
 	}
@@ -153,7 +157,7 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 
 	public function test_spec30_preexisting_schema_not_clobbered() {
 		$spec  = $this->specWithParams( array(
-			array( 'name' => 'id', 'in' => 'path', 'required' => true, 'type' => 'integer', 'schema' => array( 'type' => 'integer', 'format' => 'int64' ) ),
+			array( 'name' => 'id', 'in' => 'path', 'required' => true, 'type' => 'string', 'schema' => array( 'type' => 'integer', 'format' => 'int64' ) ),
 		) );
 		$param = $this->firstParam( ( new Spec30Formatter() )->format( $spec ) );
 
