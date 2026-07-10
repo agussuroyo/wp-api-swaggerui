@@ -212,10 +212,12 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 			$body['required'] = $required;
 		}
 
+		$form_media = array( 'application/x-www-form-urlencoded', 'multipart/form-data' );
+
 		$content = array();
 		foreach ( $media as $m ) {
 			$entry = array( 'schema' => $body );
-			if ( ! empty( $encoding ) ) {
+			if ( ! empty( $encoding ) && in_array( $m, $form_media, true ) ) {
 				$entry['encoding'] = $encoding;
 			}
 			$content[ $m ] = $entry;

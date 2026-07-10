@@ -383,6 +383,26 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		);
 	}
 
+	public function test_spec30_formdata_encoding_only_on_form_media() {
+		$spec = $this->specWithParams( array(
+			array( 'name' => 'categories', 'in' => 'formData', 'required' => false, 'type' => 'array', 'items' => array( 'type' => 'integer' ) ),
+		), 'post', array( 'application/x-www-form-urlencoded', 'application/json' ) );
+		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
+
+		$content = $op['requestBody']['content'];
+		$this->assertArrayHasKey( 'encoding', $content['application/x-www-form-urlencoded'] );
+		$this->assertArrayNotHasKey( 'encoding', $content['application/json'] );
+	}
+
+	public function test_spec30_formdata_multipart_gets_encoding() {
+		$spec = $this->specWithParams( array(
+			array( 'name' => 'categories', 'in' => 'formData', 'required' => false, 'type' => 'array', 'items' => array( 'type' => 'integer' ) ),
+		), 'post', array( 'multipart/form-data' ) );
+		$op   = $this->firstOperation( ( new Spec30Formatter() )->format( $spec ), 'post' );
+
+		$this->assertArrayHasKey( 'encoding', $op['requestBody']['content']['multipart/form-data'] );
+	}
+
 	public function test_spec30_formdata_multiple_consumes() {
 		$spec = $this->specWithParams( array(
 			array( 'name' => 'title', 'in' => 'formData', 'required' => true, 'type' => 'string' ),
