@@ -33,6 +33,21 @@
 					</td>
 				</tr>
 				<tr>
+					<th>OpenAPI Version</th>
+					<td>
+						<select name="swagger_api_spec_version">
+							<?php
+							foreach ( $spec_versions as $version ) {
+								?>
+								<option value="<?php echo esc_attr( $version ); ?>" <?php selected( $version, $swagger_api_spec_version ); ?>><?php echo esc_html( $version ); ?></option>
+								<?php
+							}
+							?>
+						</select>
+						<p class="description">Schema output format. 2.0 = Swagger 2.0; 3.0.3 = OpenAPI 3.0.3.</p>
+					</td>
+				</tr>
+				<tr>
 					<th>API Docs</th>
 					<td>
 						<a href="<?php echo esc_url( $docs_url ); ?>" target="__blank">Docs URL</a>
