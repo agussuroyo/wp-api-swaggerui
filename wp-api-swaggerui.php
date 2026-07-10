@@ -90,7 +90,8 @@ class WP_API_SwaggerUI
             $response['securityDefinitions'] = $securityDefinitions;
         }
 
-        wp_send_json($response);
+        $formatter = SwaggerSpecRegistry::forVersion(get_option('swagger_api_spec_version', '2.0'));
+        wp_send_json($formatter->format($response));
     }
 
     public function getHost()
