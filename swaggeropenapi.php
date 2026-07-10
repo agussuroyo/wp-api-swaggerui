@@ -143,7 +143,8 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 		}
 
 		if ( isset( $schema['type'] ) && 'array' === $schema['type'] ) {
-			$serialization    = $this->arrayStyle( $collection_format );
+			$in               = isset( $param['in'] ) ? $param['in'] : 'query';
+			$serialization    = $this->arrayStyle( $collection_format, $in );
 			$param['style']   = $serialization[0];
 			$param['explode'] = $serialization[1];
 		}
@@ -151,7 +152,11 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 		return $param;
 	}
 
-	private function arrayStyle($collection_format): array {
+	private function arrayStyle($collection_format, string $in): array {
+		if ( 'path' === $in || 'header' === $in ) {
+			// OAS3: path/header array parameters use 'simple' (comma-separated).
+			return array( 'simple', false );
+		}
 		switch ( $collection_format ) {
 			case 'multi':
 				return array( 'form', true );
@@ -234,12 +239,44 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 					'scheme'      => 'bearer',
 					'description' => 'Enter your token; the "Bearer" prefix is added automatically.',
 				);
+			} elseif ( 'oauth2' === $type ) {
+				$out[ $key ] = $this->mapOauth2( $def );
 			} else {
 				$out[ $key ] = $def; // already valid 3.0 (e.g. apiKey)
 			}
 		}
 
 		return $out;
+	}
+
+	private function mapOauth2(array $def): array {
+		$flow_names = array(
+			'implicit'    => 'implicit',
+			'password'    => 'password',
+			'application' => 'clientCredentials',
+			'accessCode'  => 'authorizationCode',
+		);
+		$flow_key = ( isset( $def['flow'] ) && isset( $flow_names[ $def['flow'] ] ) )
+			? $flow_names[ $def['flow'] ]
+			: 'implicit';
+
+		$flow = array();
+		if ( isset( $def['authorizationUrl'] ) ) {
+			$flow['authorizationUrl'] = $def['authorizationUrl'];
+		}
+		if ( isset( $def['tokenUrl'] ) ) {
+			$flow['tokenUrl'] = $def['tokenUrl'];
+		}
+		$flow['scopes'] = isset( $def['scopes'] ) ? $def['scopes'] : array();
+
+		$scheme = array(
+			'type'  => 'oauth2',
+			'flows' => array( $flow_key => $flow ),
+		);
+		if ( isset( $def['description'] ) ) {
+			$scheme['description'] = $def['description'];
+		}
+		return $scheme;
 	}
 
 	private function mapServers(array $spec): array {
