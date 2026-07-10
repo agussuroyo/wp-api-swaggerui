@@ -126,13 +126,8 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 	}
 
 	private function mapParameter(array $param): array {
-		if ( isset( $param['collectionFormat'] ) ) {
-			if ( 'multi' === $param['collectionFormat'] ) {
-				$param['style']   = 'form';
-				$param['explode'] = true;
-			}
-			unset( $param['collectionFormat'] );
-		}
+		$collection_format = isset( $param['collectionFormat'] ) ? $param['collectionFormat'] : null;
+		unset( $param['collectionFormat'] );
 
 		$keep   = array( 'name', 'in', 'description', 'required', 'deprecated', 'allowEmptyValue', 'style', 'explode', 'schema' );
 		$schema = $this->extractSchema( $param, $keep );
@@ -147,7 +142,28 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 			$param['schema'] = $schema;
 		}
 
+		if ( isset( $schema['type'] ) && 'array' === $schema['type'] ) {
+			$serialization    = $this->arrayStyle( $collection_format );
+			$param['style']   = $serialization[0];
+			$param['explode'] = $serialization[1];
+		}
+
 		return $param;
+	}
+
+	private function arrayStyle($collection_format): array {
+		switch ( $collection_format ) {
+			case 'multi':
+				return array( 'form', true );
+			case 'ssv':
+				return array( 'spaceDelimited', false );
+			case 'pipes':
+				return array( 'pipeDelimited', false );
+			case 'csv':
+			case 'tsv': // no native OAS3 tsv; closest is comma (form/false)
+			default:    // Swagger 2.0 default is csv
+				return array( 'form', false );
+		}
 	}
 
 	private function extractSchema(array $param, array $keep): array {
@@ -190,7 +206,12 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 			$content[ $m ] = array( 'schema' => $body );
 		}
 
-		return array( 'content' => $content );
+		$request_body = array( 'content' => $content );
+		if ( ! empty( $required ) ) {
+			$request_body['required'] = true;
+		}
+
+		return $request_body;
 	}
 
 	private function normalizeFileSchema(array $schema): array {
