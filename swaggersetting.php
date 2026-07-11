@@ -24,6 +24,8 @@ class SwaggerSetting {
 				}
 			}
 
+			update_option( 'swagger_api_expose_contact_email', isset( $_POST['swagger_api_expose_contact_email'] ) ? '1' : '0' );
+
 			add_action( 'admin_notices', [ $this, 'notices' ] );
 		}
 	}
@@ -42,6 +44,7 @@ class SwaggerSetting {
 		$data['swagger_api_auth_schemes'] = (array) get_option( 'swagger_api_auth_schemes', array( 'basic' ) );
 		$data['spec_versions']			 = SwaggerSpecRegistry::versions();
 		$data['swagger_api_spec_version'] = get_option( 'swagger_api_spec_version', '2.0' );
+		$data['swagger_api_expose_contact_email'] = get_option( 'swagger_api_expose_contact_email', '1' );
 
 		echo self::template( 'setting', $data );
 	}

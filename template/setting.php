@@ -48,6 +48,16 @@
 					</td>
 				</tr>
 				<tr>
+					<th>Contact Email</th>
+					<td>
+						<label>
+							<input type="checkbox" name="swagger_api_expose_contact_email" value="1" <?php checked( '1', $swagger_api_expose_contact_email ); ?>>
+							Include the site admin email as the API contact in the schema
+						</label>
+						<p class="description">Uncheck to omit <code>contact.email</code> from the public schema. Developers can still override via the <code>swagger_api_contact_email</code> filter.</p>
+					</td>
+				</tr>
+				<tr>
 					<th>API Docs</th>
 					<td>
 						<a href="<?php echo esc_url( $docs_url ); ?>" target="__blank">Docs URL</a>

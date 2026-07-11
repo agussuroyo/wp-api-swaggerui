@@ -683,4 +683,25 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 
 		unset( $_POST['_wpnonce'], $_POST['swagger_api_spec_version'] );
 	}
+
+	public function test_setting_save_expose_contact_email_checkbox() {
+		if ( ! class_exists( 'SwaggerSetting' ) ) {
+			require_once dirname( __DIR__ ) . '/swaggersetting.php';
+		}
+		$admin = self::factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $admin );
+
+		$setting = new SwaggerSetting();
+
+		$_POST['_wpnonce']                         = wp_create_nonce( 'swagger_api_setting' );
+		$_POST['swagger_api_expose_contact_email'] = '1';
+		$setting->saveSetting();
+		$this->assertEquals( '1', get_option( 'swagger_api_expose_contact_email' ) );
+
+		unset( $_POST['swagger_api_expose_contact_email'] ); // unchecked = absent
+		$setting->saveSetting();
+		$this->assertEquals( '0', get_option( 'swagger_api_expose_contact_email' ), 'unchecked box must store 0' );
+
+		unset( $_POST['_wpnonce'] );
+	}
 }
