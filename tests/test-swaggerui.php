@@ -141,4 +141,20 @@ class TestSwaggerUI extends WP_UnitTestCase {
 		$this->assertEquals( [ 'pets' ], $methods['get']['tags'] );
 	}
 
+	public function test_getMethodsFromArgs_consumes_are_flat_strings() {
+		$args = [
+			[
+				'methods'      => [ 'POST' => true ],
+				'accept_json'  => true,
+			],
+		];
+		$methods = $this->ui->getMethodsFromArgs( '/pets', '/wp/v2/pets', $args );
+		$consumes = $methods['post']['consumes'];
+
+		foreach ( $consumes as $item ) {
+			$this->assertTrue( is_string( $item ) );
+		}
+		$this->assertTrue( in_array( 'application/json', $consumes, true ) );
+	}
+
 }
