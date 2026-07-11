@@ -4,7 +4,7 @@ Donate link: https://www.paypal.me/agussuroyo
 Tags: swaggerui, wp swaggerui, wp rest api, wp swagger rest api, swaggerui rest api, swagger rest api, wp swagger, api, swagger, rest api
 Requires at least: 4.7
 Tested up to: 7.0
-Stable tag: 2.1.1
+Stable tag: 2.2.0
 Requires PHP: 7.4
 License: GPL v2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.txt
@@ -36,6 +36,10 @@ This plugin can be installed directly from your site.
 2. Options to choose namespace Rest API
 
 == Changelog ==
+
+= 2.2.0 =
+* Add OpenAPI 3.0.3 output, selectable in Settings → Swagger (default stays Swagger 2.0, so existing installs are unchanged)
+* Add a setting to include or omit the site contact email in the generated schema
 
 = 2.1.1 =
 * Fix per-route `tags` override being ignored in the generated Swagger docs
