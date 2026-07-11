@@ -65,7 +65,8 @@ class WP_API_SwaggerUI
 
         global $wp_version;
 
-        $contact_email = apply_filters('swagger_api_contact_email', get_option('admin_email'));
+        $expose_email  = '1' === get_option('swagger_api_expose_contact_email', '1');
+        $contact_email = apply_filters('swagger_api_contact_email', $expose_email ? get_option('admin_email') : '');
 
         $info = array(
             'title' => get_option('blogname') . ' API',
