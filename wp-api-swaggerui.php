@@ -268,7 +268,12 @@ class WP_API_SwaggerUI
                 if ($has_file) {
                     // Swagger 2 file parameters are valid only under multipart/form-data.
                     $consumes = ['multipart/form-data'];
-                    $parameters = array_map([$this, 'normalizeNonBodyParameter'], $parameters);
+                    foreach ($parameters as $index => $parameter) {
+                        // Leave an explicit body schema intact; only downgrade non-body params.
+                        if (!isset($parameter['in']) || 'body' !== $parameter['in']) {
+                            $parameters[$index] = $this->normalizeNonBodyParameter($parameter);
+                        }
+                    }
                 } elseif ($wants_json || $has_explicit_body) {
                     // Consolidate form fields into the single body parameter Swagger 2 allows.
                     $parameters = $this->buildJsonBodyParameter($parameters);
@@ -369,7 +374,9 @@ class WP_API_SwaggerUI
             $detail = array();
         }
         $schema = $this->normalizeSchema($detail);
-        $type = isset($schema['type']) ? $schema['type'] : 'string';
+        // Null when normalizeSchema intentionally omits type ($ref or composition-only);
+        // forcing 'string' here would contradict the $ref/allOf once folded into a body.
+        $type = isset($schema['type']) ? $schema['type'] : null;
 
         $in = $this->detectIn($param, $mtd, $endpoint, $detail);
         // A JSON-Schema `required` array is the object's schema-level list, not field requiredness.
@@ -401,8 +408,10 @@ class WP_API_SwaggerUI
             'in' => $in,
             'description' => isset($detail['description']) ? $detail['description'] : '',
             'required' => $required,
-            'type' => $type
         );
+        if (null !== $type) {
+            $params['type'] = $type;
+        }
 
         foreach ($schema as $key => $value) {
             if ('description' !== $key && 'required' !== $key && 'type' !== $key) {

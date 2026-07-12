@@ -652,6 +652,53 @@ class TestSwaggerUI extends WP_UnitTestCase {
 		$this->assertEquals( 'string', $this->ui->parseTypeObjectToString( array( 'object', 'null' ) ) );
 	}
 
+	public function test_ref_body_property_has_no_string_type() {
+		$operation = $this->ui->getMethodsFromArgs( '/sample', '/wp/v2/sample', array(array(
+			'methods'     => array( 'POST' => true ),
+			'accept_json' => true,
+			'args'        => array( 'thing' => array( '$ref' => '#/definitions/Thing' ) ),
+		)) )['post'];
+
+		$bodies = array_values( array_filter( $operation['parameters'], function ( $p ) {
+			return isset( $p['in'] ) && 'body' === $p['in'];
+		} ) );
+		$prop = $bodies[0]['schema']['properties']['thing'];
+		$this->assertEquals( '#/definitions/Thing', $prop['$ref'] );
+		$this->assertArrayNotHasKey( 'type', $prop );
+	}
+
+	public function test_composition_body_property_has_no_string_type() {
+		$operation = $this->ui->getMethodsFromArgs( '/sample', '/wp/v2/sample', array(array(
+			'methods'     => array( 'POST' => true ),
+			'accept_json' => true,
+			'args'        => array( 'thing' => array( 'allOf' => array( array( 'type' => 'object', 'properties' => array( 'a' => array( 'type' => 'string' ) ) ) ) ) ),
+		)) )['post'];
+
+		$bodies = array_values( array_filter( $operation['parameters'], function ( $p ) {
+			return isset( $p['in'] ) && 'body' === $p['in'];
+		} ) );
+		$prop = $bodies[0]['schema']['properties']['thing'];
+		$this->assertArrayHasKey( 'allOf', $prop );
+		$this->assertArrayNotHasKey( 'type', $prop );
+	}
+
+	public function test_file_plus_explicit_body_keeps_body_schema() {
+		$operation = $this->ui->getMethodsFromArgs( '/sample', '/wp/v2/sample', array(array(
+			'methods'     => array( 'POST' => true ),
+			'accept_json' => true,
+			'args'        => array(
+				'file' => array( 'type' => 'file' ),
+				'meta' => array( 'in' => 'body', 'schema' => array( 'type' => 'object', 'properties' => array( 'x' => array( 'type' => 'string' ) ) ) ),
+			),
+		)) )['post'];
+
+		$bodies = array_values( array_filter( $operation['parameters'], function ( $p ) {
+			return isset( $p['in'] ) && 'body' === $p['in'];
+		} ) );
+		$this->assertCount( 1, $bodies );
+		$this->assertArrayHasKey( 'x', $bodies[0]['schema']['properties'] );
+	}
+
 	public function test_buildParameters() {
 		$this->assertTrue( is_array( $this->ui->getParametersFromArgs( '/sample/{id}', [], [] ) ) );
 	}
