@@ -706,7 +706,7 @@ class TestSwaggerUI extends WP_UnitTestCase {
 		$this->assertTrue( $by_name['x']['required'] );
 	}
 
-	public function test_openapi3_does_not_rewrite_refs_in_examples() {
+	public function test_openapi3_rewrites_schema_refs_but_not_example_refs() {
 		$openapi = ( new Spec30Formatter() )->format(array(
 			'host'     => 'example.org',
 			'basePath' => '/wp-json',
@@ -715,13 +715,50 @@ class TestSwaggerUI extends WP_UnitTestCase {
 				'produces'  => array( 'application/json' ),
 				'responses' => array( '200' => array(
 					'description' => 'OK',
+					'schema'      => array( '$ref' => '#/definitions/Thing' ),
 					'examples'    => array( 'application/json' => array( '$ref' => '#/definitions/Thing' ) ),
 				) ),
 			) ) ),
 		));
 
-		$example = $openapi['paths']['/sample']['get']['responses']['200']['content']['application/json']['example'];
-		$this->assertEquals( '#/definitions/Thing', $example['$ref'] );
+		$entry = $openapi['paths']['/sample']['get']['responses']['200']['content']['application/json'];
+		// $ref in a schema position is rewritten for OpenAPI 3...
+		$this->assertEquals( '#/components/schemas/Thing', $entry['schema']['$ref'] );
+		// ...but an identical $ref sitting in literal example data is left alone.
+		$this->assertEquals( '#/definitions/Thing', $entry['example']['$ref'] );
+	}
+
+	public function test_non_body_param_drops_schema_only_keys() {
+		$params = $this->ui->getMethodsFromArgs( '/sample', '/wp/v2/sample', array(array(
+			'methods'     => array( 'GET' => true ),
+			'accept_json' => false,
+			'args'        => array( 'q' => array( 'type' => 'string', 'title' => 'Q', 'example' => 'hi', 'xml' => array( 'name' => 'Q' ), 'description' => 'search' ) ),
+		)) )['get']['parameters'];
+
+		$this->assertArrayNotHasKey( 'title', $params[0] );
+		$this->assertArrayNotHasKey( 'example', $params[0] );
+		$this->assertArrayNotHasKey( 'xml', $params[0] );
+		$this->assertEquals( 'search', $params[0]['description'] );
+		$this->assertEquals( 'string', $params[0]['type'] );
+	}
+
+	public function test_body_schema_preserves_xml_metadata() {
+		$operation = $this->ui->getMethodsFromArgs( '/sample', '/wp/v2/sample', array(array(
+			'methods'     => array( 'POST' => true ),
+			'accept_json' => false,
+			'consumes'    => array( 'application/xml' ),
+			'args'        => array( 'payload' => array( 'in' => 'body', 'schema' => array(
+				'type'       => 'object',
+				'xml'        => array( 'name' => 'Payload' ),
+				'properties' => array( 'x' => array( 'type' => 'string', 'xml' => array( 'attribute' => true ) ) ),
+			) ) ),
+		)) )['post'];
+
+		$bodies = array_values( array_filter( $operation['parameters'], function ( $p ) {
+			return isset( $p['in'] ) && 'body' === $p['in'];
+		} ) );
+		$this->assertEquals( array( 'name' => 'Payload' ), $bodies[0]['schema']['xml'] );
+		$this->assertEquals( array( 'attribute' => true ), $bodies[0]['schema']['properties']['x']['xml'] );
 	}
 
 	public function test_buildParameters() {

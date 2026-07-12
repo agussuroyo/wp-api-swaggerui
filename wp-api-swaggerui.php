@@ -505,7 +505,7 @@ class WP_API_SwaggerUI
 
         // Keep only keywords valid in Swagger 2.0 (the base spec this plugin emits).
         // oneOf/anyOf/const/patternProperties are not; dropping beats emitting invalid output.
-        $keys = array('description', 'format', 'enum', 'default', 'example', 'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum', 'multipleOf', 'minLength', 'maxLength', 'pattern', 'minItems', 'maxItems', 'uniqueItems', 'minProperties', 'maxProperties', 'title');
+        $keys = array('description', 'format', 'enum', 'default', 'example', 'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum', 'multipleOf', 'minLength', 'maxLength', 'pattern', 'minItems', 'maxItems', 'uniqueItems', 'minProperties', 'maxProperties', 'title', 'xml');
         foreach ($keys as $key) {
             if (array_key_exists($key, $detail)) {
                 $schema[$key] = $detail[$key];
@@ -685,6 +685,10 @@ class WP_API_SwaggerUI
                 unset($parameter[$key]);
             }
         }
+        // Swagger 2 Parameter Objects (non-body) permit only a fixed key subset; schema-only
+        // metadata such as title/example/xml is invalid here and must not leak through.
+        $allowed = array('name', 'in', 'description', 'required', 'type', 'format', 'allowEmptyValue', 'items', 'collectionFormat', 'default', 'maximum', 'exclusiveMaximum', 'minimum', 'exclusiveMinimum', 'maxLength', 'minLength', 'pattern', 'maxItems', 'minItems', 'uniqueItems', 'enum', 'multipleOf');
+        $parameter = array_intersect_key($parameter, array_flip($allowed));
         // A string parameter cannot carry an array default left over from the downgrade.
         if (isset($parameter['type']) && 'string' === $parameter['type'] && isset($parameter['default']) && is_array($parameter['default'])) {
             unset($parameter['default']);
