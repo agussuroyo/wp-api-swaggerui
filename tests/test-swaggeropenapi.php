@@ -53,6 +53,24 @@ class TestSwaggerOpenApi extends WP_UnitTestCase {
 		$this->assertEquals( array( 'title' => 'T' ), $out['info'] );
 	}
 
+	public function test_spec30_plain_permalinks_advertise_single_rest_route_server() {
+		update_option( 'permalink_structure', '' );
+		update_option( 'swagger_api_spec_version', '3.0.3' );
+
+		$spec = array(
+			'info'     => array( 'title' => 'T' ),
+			'host'     => 'example.com',
+			'basePath' => '/wp-json',
+			'schemes'  => array( 'https', 'http' ),
+			'paths'    => array(),
+		);
+		$out = ( new Spec30Formatter() )->format( $spec );
+
+		$this->assertCount( 1, $out['servers'] );
+		$this->assertStringEndsWith( '?rest_route=', $out['servers'][0]['url'] );
+		$this->assertStringNotContainsString( 'wp-json', $out['servers'][0]['url'] );
+	}
+
 	public function test_spec30_security_schemes() {
 		$spec = array(
 			'host'                => 'e.com',

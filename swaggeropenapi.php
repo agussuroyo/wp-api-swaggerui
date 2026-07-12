@@ -395,6 +395,13 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 	}
 
 	private function mapServers(array $spec): array {
+		// Plain permalinks: advertise the honest ?rest_route= server so the
+		// dropdown matches the URL Try-it-out actually calls.
+		$cfg = WP_API_SwaggerUI::restRouteConfig();
+		if ( $cfg['enabled'] && ! empty( $cfg['server'] ) ) {
+			return array( array( 'url' => $cfg['server'] ) );
+		}
+
 		$host     = isset( $spec['host'] ) ? $spec['host'] : '';
 		$basePath = isset( $spec['basePath'] ) ? $spec['basePath'] : '';
 		$schemes  = ! empty( $spec['schemes'] ) ? $spec['schemes'] : array( 'https' );
