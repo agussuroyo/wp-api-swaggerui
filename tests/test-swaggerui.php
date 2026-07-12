@@ -852,7 +852,6 @@ class TestSwaggerUI extends WP_UnitTestCase {
 		$cfg = WP_API_SwaggerUI::restRouteConfig();
 
 		$this->assertFalse($cfg['enabled']);
-		$this->assertStringEndsWith('/wp-json', $cfg['basePath']);
 	}
 
 	public function test_restRouteConfig_enabled_on_plain_permalinks()
@@ -862,8 +861,27 @@ class TestSwaggerUI extends WP_UnitTestCase {
 		$cfg = WP_API_SwaggerUI::restRouteConfig();
 
 		$this->assertTrue($cfg['enabled']);
-		$this->assertStringEndsWith('/wp-json', $cfg['basePath']);
 		$this->assertStringNotContainsString('?', $cfg['restRoot']);
+	}
+
+	public function test_restRouteConfig_strip_is_rest_prefix_for_swagger2()
+	{
+		update_option('swagger_api_spec_version', '2.0');
+
+		$cfg = WP_API_SwaggerUI::restRouteConfig();
+
+		$this->assertStringEndsWith('/wp-json', $cfg['strip']);
+		$this->assertNull($cfg['server']);
+	}
+
+	public function test_restRouteConfig_advertises_rest_route_server_for_openapi3()
+	{
+		update_option('swagger_api_spec_version', '3.0.3');
+
+		$cfg = WP_API_SwaggerUI::restRouteConfig();
+
+		$this->assertStringEndsWith('?rest_route=', $cfg['server']);
+		$this->assertStringNotContainsString('wp-json', $cfg['server']);
 	}
 
 }

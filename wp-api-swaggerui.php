@@ -133,13 +133,29 @@ class WP_API_SwaggerUI
     // ?rest_route= form when permalinks are Plain. rest_url() has no pretty
     // /wp-json route then, so Swagger UI's server+path URLs 404; the JS
     // requestInterceptor uses this to rebuild each REST call.
+    //
+    // strip = the URL path Swagger UI prepends for the active spec version.
+    // OpenAPI 3.0 can advertise an honest ?rest_route= server (returned in
+    // 'server'); Swagger 2.0's host+basePath cannot carry a query string, so
+    // it keeps the /wp-json base and only the interceptor makes it work.
     public static function restRouteConfig()
     {
-        $self = new self();
+        $rest_root = explode('?', rest_url('/'))[0];
+        $self      = new self();
+
+        if ('3.0.3' === get_option('swagger_api_spec_version', '2.0')) {
+            $server = $rest_root . '?rest_route=';
+            $strip  = parse_url($rest_root, PHP_URL_PATH);
+        } else {
+            $server = null;
+            $strip  = $self->getBasePath();
+        }
+
         return array(
             'enabled'  => ! get_option('permalink_structure'),
-            'basePath' => $self->getBasePath(),
-            'restRoot' => explode('?', rest_url('/'))[0],
+            'restRoot' => $rest_root,
+            'strip'    => $strip,
+            'server'   => $server,
         );
     }
 

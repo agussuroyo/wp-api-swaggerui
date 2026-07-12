@@ -43,7 +43,7 @@ This plugin can be installed directly from your site.
 
 = 2.4.0 =
 * Serve the docs and schema on all permalink types via `?swagger_api=docs` / `?swagger_api=schema`, not only pretty permalinks
-* Make the interactive Try-it-out work under Plain permalinks by rewriting REST requests to the `?rest_route=` form
+* Make the interactive Try-it-out work under Plain permalinks by rewriting REST requests to the `?rest_route=` form; the OpenAPI 3.0.3 server URL now advertises that same form so it matches the request that is sent
 
 = 2.3.0 =
 * Fix nested object and array item properties not showing in Swagger UI (recursive schema normalization)
