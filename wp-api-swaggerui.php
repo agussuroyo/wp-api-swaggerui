@@ -129,6 +129,20 @@ class WP_API_SwaggerUI
         return rtrim($path, '/') . '/' . ltrim(rest_get_url_prefix(), '/');
     }
 
+    // Client-side data for rewriting Swagger UI Try-it-out requests to the
+    // ?rest_route= form when permalinks are Plain. rest_url() has no pretty
+    // /wp-json route then, so Swagger UI's server+path URLs 404; the JS
+    // requestInterceptor uses this to rebuild each REST call.
+    public static function restRouteConfig()
+    {
+        $self = new self();
+        return array(
+            'enabled'  => ! get_option('permalink_structure'),
+            'basePath' => $self->getBasePath(),
+            'restRoot' => explode('?', rest_url('/'))[0],
+        );
+    }
+
     public function getSchemes()
     {
         $schemes = [];

@@ -845,4 +845,25 @@ class TestSwaggerUI extends WP_UnitTestCase {
 		$this->assertStringContainsString('swagger_api=schema', $url);
 	}
 
+	public function test_restRouteConfig_disabled_on_pretty_permalinks()
+	{
+		update_option('permalink_structure', '/%postname%/');
+
+		$cfg = WP_API_SwaggerUI::restRouteConfig();
+
+		$this->assertFalse($cfg['enabled']);
+		$this->assertStringEndsWith('/wp-json', $cfg['basePath']);
+	}
+
+	public function test_restRouteConfig_enabled_on_plain_permalinks()
+	{
+		update_option('permalink_structure', '');
+
+		$cfg = WP_API_SwaggerUI::restRouteConfig();
+
+		$this->assertTrue($cfg['enabled']);
+		$this->assertStringEndsWith('/wp-json', $cfg['basePath']);
+		$this->assertStringNotContainsString('?', $cfg['restRoot']);
+	}
+
 }
