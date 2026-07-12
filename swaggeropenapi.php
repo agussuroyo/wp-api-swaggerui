@@ -30,16 +30,36 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 		if ( isset( $spec['securityDefinitions'] ) && is_array( $spec['securityDefinitions'] ) ) {
 			$schemes = $this->mapSecuritySchemes( $spec['securityDefinitions'] );
 			if ( ! empty( $schemes ) ) {
-				$spec['components'] = array( 'securitySchemes' => $schemes );
+				$spec['components']['securitySchemes'] = $schemes;
 			}
 			unset( $spec['securityDefinitions'] );
+		}
+
+		if ( isset( $spec['definitions'] ) && is_array( $spec['definitions'] ) ) {
+			$existing_schemas               = isset( $spec['components']['schemas'] ) && is_array( $spec['components']['schemas'] ) ? $spec['components']['schemas'] : array();
+			$spec['components']['schemas'] = $existing_schemas + $spec['definitions'];
+			unset( $spec['definitions'] );
 		}
 
 		if ( isset( $spec['paths'] ) ) {
 			$spec['paths'] = $this->mapPaths( $spec['paths'] );
 		}
 
+		$spec = $this->rewriteRefs( $spec );
+
 		return $spec;
+	}
+
+	private function rewriteRefs(array $data): array {
+		$prefix = '#/definitions/';
+		foreach ( $data as $key => $value ) {
+			if ( '$ref' === $key && is_string( $value ) && 0 === strpos( $value, $prefix ) ) {
+				$data[ $key ] = '#/components/schemas/' . substr( $value, strlen( $prefix ) );
+			} elseif ( is_array( $value ) ) {
+				$data[ $key ] = $this->rewriteRefs( $value );
+			}
+		}
+		return $data;
 	}
 
 	private function mapPaths(array $paths): array {
@@ -268,6 +288,31 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 			$schema['type']   = 'string';
 			$schema['format'] = 'binary';
 		}
+
+		foreach ( array( 'items', 'schema', 'additionalProperties' ) as $key ) {
+			if ( isset( $schema[ $key ] ) && is_array( $schema[ $key ] ) ) {
+				$schema[ $key ] = $this->normalizeFileSchema( $schema[ $key ] );
+			}
+		}
+
+		if ( isset( $schema['properties'] ) && is_array( $schema['properties'] ) ) {
+			foreach ( $schema['properties'] as $name => $property ) {
+				if ( is_array( $property ) ) {
+					$schema['properties'][ $name ] = $this->normalizeFileSchema( $property );
+				}
+			}
+		}
+
+		foreach ( array( 'allOf', 'oneOf', 'anyOf' ) as $combinator ) {
+			if ( isset( $schema[ $combinator ] ) && is_array( $schema[ $combinator ] ) ) {
+				foreach ( $schema[ $combinator ] as $index => $branch ) {
+					if ( is_array( $branch ) ) {
+						$schema[ $combinator ][ $index ] = $this->normalizeFileSchema( $branch );
+					}
+				}
+			}
+		}
+
 		return $schema;
 	}
 
