@@ -52,6 +52,11 @@ class WP_API_SwaggerUI
         return plugin_dir_url(__FILE__) . $path;
     }
 
+    public static function endpointUrl($endpoint)
+    {
+        return add_query_arg('swagger_api', $endpoint, home_url('/'));
+    }
+
     public static function pluginPath($path)
     {
         return plugin_dir_path(__FILE__) . $path;
