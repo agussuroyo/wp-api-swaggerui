@@ -19,6 +19,10 @@ Feature:
 
 * Support for GET, POST, PUT, PATCH and DELETE request method
 * Support for Auth Basic authorization method
+* Support for Bearer token (Authorization header) authorization method
+* Choose which authorization methods (Basic / Bearer) appear in the Swagger UI Authorize dialog
+* Output as Swagger 2.0 (default) or OpenAPI 3.0.3
+* Option to include or omit the site admin contact email in the generated schema
 * Choose which namespace API that will be used on the SwaggerUI
 
 == Installation ==

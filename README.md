@@ -10,14 +10,17 @@ SwaggerUI used to make WordPress REST API endpoint have a interactive UI, so we 
 - Support for `GET`, `POST`, `PUT`, `PATCH` and `DELETE` request methods
 - Support for Auth Basic authorization method
 - Support for Bearer token (`Authorization` header) authorization method
+- Choose which authorization methods (Basic / Bearer) appear in the Swagger UI Authorize dialog
+- Output as Swagger 2.0 (default) or OpenAPI 3.0.3
+- Option to include or omit the site admin contact email in the generated schema
 - Choose which namespace API that will be used on the SwaggerUI
 
 ![alt text](https://i.ibb.co/p0Kjhpn/Screen-Shot-2019-07-25-at-08-57-32.png)
   
 ## Requirements
  - Your website should not block support of WordPress default REST API
- - Works for WordPress REST API Version 2
- - PHP Version should be greater than 5.4 
+ - WordPress 4.7 or later (REST API v2)
+ - PHP 7.4 or later
 
 ## Installation
 ### Manual Installation
@@ -46,6 +49,12 @@ From the Swagger Setting page, choose between the API Basepath options displayed
 ### Access Swagger UI
 You can see Swagger Docs URL accessing:
   - http://example.com/rest-api/docs/
+
+### Settings
+The Swagger Setting page (Settings → Swagger) also offers:
+  - **Authentication** — pick which methods (Basic / Bearer) appear in the Swagger UI Authorize dialog. Bearer requires a token plugin (e.g. JWT) to validate requests.
+  - **OpenAPI Version** — output as Swagger 2.0 (default) or OpenAPI 3.0.3.
+  - **Contact Email** — include or omit the site admin email as the API contact. Override via the `swagger_api_contact_email` filter.
 
 ### Authorization
 On WordPress 5.6+, the Swagger UI **Authorize** (Basic) prompt is handled by WordPress'
@@ -179,6 +188,8 @@ register_rest_route(
 )
 ```
 > These examples were based on the defaults presented at [Swagger Editor](https://editor.swagger.io)
+
+> **Note:** For `POST`/`PUT`/`PATCH` routes, registered JSON `args` are automatically combined into a single request body — you don't need to define an explicit `body` arg. Nested object/array schemas (with `enum`, `required`, `format`, `default`) are preserved. File uploads stay on `multipart/form-data`.
 
 ## Guide
 
