@@ -28,8 +28,15 @@ SwaggerUIBundle({
         if (u.origin !== base.origin || u.searchParams.has('swagger_api')) {
             return req;
         }
+        // Only rewrite calls under the REST base path, so same-origin non-REST
+        // requests (e.g. an OAuth2 tokenUrl) are left untouched. When cfg.strip
+        // is just '/' (rare bare-root installs) we can't distinguish, so fall
+        // back to rewriting; the schema fetch stays safe via the guard above.
         let route = u.pathname;
-        if (cfg.strip && cfg.strip !== '/' && route.indexOf(cfg.strip) === 0) {
+        if (cfg.strip && cfg.strip !== '/') {
+            if (route.indexOf(cfg.strip) !== 0) {
+                return req;
+            }
             route = route.slice(cfg.strip.length);
         }
         const query = u.search ? u.search.slice(1) : '';
