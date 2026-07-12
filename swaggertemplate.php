@@ -79,7 +79,7 @@ class SwaggerTemplate
             wp_enqueue_script('swagger-ui', WP_API_SwaggerUI::pluginUrl('assets/js/app.js'), $info_js['dependencies'], $info_js['version'], true);
 
             $l10n = array(
-                'schema_url' => home_url(WP_API_SwaggerUI::rewriteBaseApi() . '/schema')
+                'schema_url' => WP_API_SwaggerUI::endpointUrl('schema')
             );
             wp_localize_script('swagger-ui', 'swagger_ui_app', $l10n);
         }

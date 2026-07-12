@@ -825,4 +825,24 @@ class TestSwaggerUI extends WP_UnitTestCase {
 		$this->assertTrue( in_array( 'application/json', $consumes, true ) );
 	}
 
+	public function test_endpointUrl_emits_query_string_form()
+	{
+		$url = WP_API_SwaggerUI::endpointUrl('docs');
+
+		$this->assertStringContainsString('swagger_api=docs', $url);
+		$this->assertStringStartsWith(home_url('/'), $url);
+
+		parse_str((string) parse_url($url, PHP_URL_QUERY), $qs);
+		$this->assertSame('docs', $qs['swagger_api']);
+	}
+
+	public function test_endpointUrl_works_when_permalinks_are_plain()
+	{
+		update_option('permalink_structure', '');
+
+		$url = WP_API_SwaggerUI::endpointUrl('schema');
+
+		$this->assertStringContainsString('swagger_api=schema', $url);
+	}
+
 }
