@@ -253,6 +253,46 @@ class WP_API_SwaggerUI
                     $consumes[] = 'application/json';
                 }
 
+                $has_file = false;
+                $has_explicit_body = false;
+                foreach ($parameters as $parameter) {
+                    if ($this->schemaContainsFile($parameter)) {
+                        $has_file = true;
+                    }
+                    if (isset($parameter['in']) && 'body' === $parameter['in']) {
+                        $has_explicit_body = true;
+                    }
+                }
+                $wants_json = in_array('application/json', $consumes, true);
+
+                if ($has_file) {
+                    // Swagger 2 file parameters are valid only under multipart/form-data.
+                    $consumes = ['multipart/form-data'];
+                    $parameters = array_map([$this, 'normalizeNonBodyParameter'], $parameters);
+                } elseif ($wants_json || $has_explicit_body) {
+                    // Consolidate form fields into the single body parameter Swagger 2 allows.
+                    $parameters = $this->buildJsonBodyParameter($parameters);
+                    $has_body = false;
+                    foreach ($parameters as $index => $parameter) {
+                        if (isset($parameter['in']) && 'body' === $parameter['in']) {
+                            $has_body = true;
+                        } else {
+                            // Query/header params still cannot carry object schemas in Swagger 2.
+                            $parameters[$index] = $this->normalizeNonBodyParameter($parameter);
+                        }
+                    }
+                    // A body parameter cannot coexist with form media types. Drop those, but keep
+                    // any declared body-compatible type (e.g. XML); only default to JSON if none remain.
+                    if ($has_body) {
+                        $consumes = array_values(array_diff($consumes, ['application/x-www-form-urlencoded', 'multipart/form-data']));
+                        if (empty($consumes)) {
+                            $consumes = ['application/json'];
+                        }
+                    }
+                } else {
+                    $parameters = array_map([$this, 'normalizeNonBodyParameter'], $parameters);
+                }
+
                 $responses =$this->getResponses($methodEndpoint);
                 if (isset($arg['responses'])) {
                     $responses = $arg['responses'];
@@ -311,6 +351,8 @@ class WP_API_SwaggerUI
                 $in = 'path';
                 break;
             case 'post':
+            case 'put':
+            case 'patch':
                 $in = 'formData';
                 break;
             default:
@@ -321,40 +363,34 @@ class WP_API_SwaggerUI
         return $in;
     }
 
-    public function parseTypeObjectToString($types)
-    {
-        if (is_array($types)) {
-            foreach ($types as $type) {
-                return $this->parseTypeObjectToString($type);
-            }
-        }
-        return $types === 'object' ? 'string' : $types;
-    }
-
     public function buildParams($param, $mtd, $endpoint, $detail)
     {
-        /**
-         * When the type is object, SwaggerUI by default add empty `{}` to parameter value
-         * It's annoying so need to convert to just `string`
-         */
-        $type = $this->parseTypeObjectToString($detail['type']);
-        if (is_array($type) && isset($type[0])) {
-            $type = $type[0];
+        if (!is_array($detail)) {
+            $detail = array();
         }
-
-        if (empty($type)) {
-
-            if (strpos($param, '_id') !== false) {
-                $type = 'integer';
-            } elseif (strtolower($param) === 'id') {
-                $type = 'integer';
-            } else {
-                $type = 'string';
-            }
-        }
+        $schema = $this->normalizeSchema($detail);
+        $type = isset($schema['type']) ? $schema['type'] : 'string';
 
         $in = $this->detectIn($param, $mtd, $endpoint, $detail);
-        $required = !empty($detail['required']);
+        // A JSON-Schema `required` array is the object's schema-level list, not field requiredness.
+        $required = !empty($detail['required']) && !is_array($detail['required']);
+
+        // Swagger 2 body parameters carry their schema under `schema`, not primitive fields.
+        if ('body' === $in) {
+            return array(
+                'name' => $param,
+                'in' => 'body',
+                'description' => isset($detail['description']) ? $detail['description'] : '',
+                'required' => $required,
+                'schema' => isset($detail['schema']) ? $this->normalizeSchema($detail['schema']) : $schema,
+            );
+        }
+
+        // Typeless `id` / `*_id` arguments are conventionally integers.
+        if (!isset($detail['type']) && 'string' === $type
+            && ('id' === strtolower($param) || false !== strpos($param, '_id'))) {
+            $type = 'integer';
+        }
 
         if ('path' === $in) {
             $required = true;
@@ -368,42 +404,316 @@ class WP_API_SwaggerUI
             'type' => $type
         );
 
-        if (isset($detail['items'])) {
-            $params['items'] = array(
-                'type' => isset($detail['items']['type']) ? $detail['items']['type'] : 'string'
-            );
-        } elseif (isset($detail['enum'])) {
-            $params['type'] = 'array';
-            $items = array(
-                'type' => $detail['type'],
-                'enum' => $detail['enum']
-            );
-            if (isset($detail['default'])) {
-                $items['default'] = $detail['default'];
+        foreach ($schema as $key => $value) {
+            if ('description' !== $key && 'required' !== $key && 'type' !== $key) {
+                $params[$key] = $value;
             }
-            $params['items'] = $items;
+        }
+
+        // Object sub-property requirements are schema-level; carry them separately so the
+        // param's own boolean requiredness ($params['required']) is preserved.
+        if ('object' === $type && isset($schema['required'])) {
+            $params['objectRequired'] = $schema['required'];
+        }
+
+        if ('array' === $type && isset($detail['enum']) && !isset($detail['items'])) {
             $params['collectionFormat'] = 'multi';
         }
 
-        if (isset($detail['maximum'])) {
-            $params['maximum'] = $detail['maximum'];
-        }
-
-        if (isset($detail['minimum'])) {
-            $params['minimum'] = $detail['minimum'];
-        }
-
-        if (isset($detail['format'])) {
-            $params['format'] = $detail['format'];
-        } elseif ($detail['type'] === 'integer') {
+        if ('integer' === $type && !isset($params['format'])) {
             $params['format'] = 'int64';
         }
 
-        if (isset($detail['schema'])) {
-            $params['schema'] = $detail['schema'];
+        return $params;
+    }
+
+    /**
+     * @deprecated Use normalizeSchema() instead. Retained for backward compatibility.
+     */
+    public function parseTypeObjectToString($types)
+    {
+        if (is_array($types)) {
+            foreach ($types as $type) {
+                return $this->parseTypeObjectToString($type);
+            }
+        }
+        return 'object' === $types ? 'string' : $types;
+    }
+
+    /** Normalize a WordPress REST argument into a recursively complete schema. */
+    public function normalizeSchema($detail)
+    {
+        if (!is_array($detail)) {
+            return array('type' => 'string');
         }
 
-        return $params;
+        // A $ref replaces the schema; it carries no sibling keywords.
+        if (isset($detail['$ref'])) {
+            return array('$ref' => $detail['$ref']);
+        }
+
+        $schema = array();
+        $type = null;
+        if (isset($detail['type'])) {
+            $type = $detail['type'];
+            if (is_array($type)) {
+                // Union types: drop the non-representable "null" and keep the first real type.
+                $type = array_values(array_filter($type, function ($member) {
+                    return 'null' !== $member;
+                }));
+                $type = !empty($type) ? reset($type) : 'string';
+            }
+            // Some routes use the non-standard type "enum". Keep their intent valid.
+            $type = ('enum' === $type) ? 'string' : ($type ?: 'string');
+        } elseif (isset($detail['properties'])) {
+            $type = 'object';
+        } elseif (isset($detail['items'])) {
+            $type = 'array';
+        } elseif (isset($detail['allOf'])) {
+            $type = null; // composition-only schema has no primitive type
+        } elseif ((isset($detail['required']) && is_array($detail['required'])) || isset($detail['additionalProperties']) || isset($detail['minProperties']) || isset($detail['maxProperties'])) {
+            $type = 'object'; // object-only keywords imply an object
+        } else {
+            $type = 'string';
+        }
+        if (null !== $type) {
+            $schema['type'] = $type;
+        }
+
+        // Keep only keywords valid in Swagger 2.0 (the base spec this plugin emits).
+        // oneOf/anyOf/const/patternProperties are not; dropping beats emitting invalid output.
+        $keys = array('description', 'format', 'enum', 'default', 'example', 'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum', 'multipleOf', 'minLength', 'maxLength', 'pattern', 'minItems', 'maxItems', 'uniqueItems', 'minProperties', 'maxProperties', 'title');
+        foreach ($keys as $key) {
+            if (array_key_exists($key, $detail)) {
+                $schema[$key] = $detail[$key];
+            }
+        }
+
+        if (isset($detail['additionalProperties'])) {
+            $additional = $detail['additionalProperties'];
+            if (is_array($additional)) {
+                // Empty schema {} means "any value"; keep it open rather than narrowing to string.
+                $schema['additionalProperties'] = empty($additional) ? true : $this->normalizeSchema($additional);
+            } else {
+                $schema['additionalProperties'] = $additional;
+            }
+        }
+        if (isset($detail['allOf']) && is_array($detail['allOf'])) {
+            $schema['allOf'] = array_map(array($this, 'normalizeSchema'), $detail['allOf']);
+        }
+
+        if (isset($detail['items'])) {
+            $schema['items'] = $this->normalizeSchema($detail['items']);
+        } elseif ('array' === $type) {
+            $items = array('type' => 'string');
+            if (isset($schema['enum'])) {
+                $items['enum'] = $schema['enum'];
+                unset($schema['enum']);
+                // The scalar default constrains items, not the array itself.
+                if (isset($schema['default']) && !is_array($schema['default'])) {
+                    $items['default'] = $schema['default'];
+                    unset($schema['default']);
+                }
+            }
+            $schema['items'] = $items;
+        }
+
+        // Object-level required (JSON Schema array) applies even when properties arrive via allOf.
+        $required = (isset($detail['required']) && is_array($detail['required'])) ? $detail['required'] : array();
+        if (isset($detail['properties']) && is_array($detail['properties'])) {
+            $schema['properties'] = array();
+            foreach ($detail['properties'] as $name => $property) {
+                $schema['properties'][$name] = $this->normalizeSchema($property);
+                if (is_array($property) && !empty($property['required']) && !is_array($property['required'])) {
+                    $required[] = $name;
+                }
+            }
+        }
+        $required = array_values(array_unique($required));
+        if (!empty($required)) {
+            $schema['required'] = $required;
+        }
+
+        return $schema;
+    }
+
+    /** Combine inferred form fields into the one body parameter Swagger 2 supports. */
+    public function buildJsonBodyParameter($parameters)
+    {
+        $ordinary = array();
+        $properties = array();
+        $required = array();
+
+        foreach ($parameters as $parameter) {
+            if (!isset($parameter['in']) || 'formData' !== $parameter['in']) {
+                $ordinary[] = $parameter;
+                continue;
+            }
+            $name = $parameter['name'];
+            $field_required = !empty($parameter['required']);
+            $schema = $parameter;
+            foreach (array('name', 'in', 'required', 'collectionFormat', 'objectRequired') as $key) {
+                unset($schema[$key]);
+            }
+            if (isset($parameter['objectRequired'])) {
+                $schema['required'] = $parameter['objectRequired'];
+            }
+            $properties[$name] = $schema;
+            if ($field_required) {
+                $required[] = $name;
+            }
+        }
+
+        // Swagger 2 permits a single body parameter: collapse multiple explicit ones into the first.
+        $bodyIndex = null;
+        foreach ($ordinary as $index => $parameter) {
+            if (!isset($parameter['in']) || 'body' !== $parameter['in']) {
+                continue;
+            }
+            if (null === $bodyIndex) {
+                $bodyIndex = $index;
+                continue;
+            }
+            if ($this->bodySchemaIsObjectCompatible($this->bodySchema($ordinary[$bodyIndex]))
+                && $this->bodySchemaIsObjectCompatible($this->bodySchema($parameter))) {
+                $ordinary[$bodyIndex]['schema'] = $this->mergeObjectSchema($this->bodySchema($ordinary[$bodyIndex]), $this->bodySchema($parameter));
+                if (!empty($parameter['required'])) {
+                    $ordinary[$bodyIndex]['required'] = true;
+                }
+            }
+            unset($ordinary[$index]);
+        }
+        $ordinary = array_values($ordinary);
+
+        if (empty($properties)) {
+            return $ordinary;
+        }
+
+        // Merge inferred form fields into an existing body when it is object-compatible.
+        foreach ($ordinary as $index => $parameter) {
+            if (!isset($parameter['in']) || 'body' !== $parameter['in']) {
+                continue;
+            }
+            if (!$this->bodySchemaIsObjectCompatible($this->bodySchema($parameter))) {
+                return $ordinary; // cannot fold form fields into a non-object body
+            }
+            $ordinary[$index]['schema'] = $this->mergeObjectSchema($this->bodySchema($parameter), array('properties' => $properties, 'required' => $required));
+            if (!empty($required)) {
+                $ordinary[$index]['required'] = true;
+            }
+            return $ordinary;
+        }
+
+        $schema = array('type' => 'object', 'properties' => $properties);
+        if (!empty($required)) {
+            $schema['required'] = $required;
+        }
+        $ordinary[] = array(
+            'name' => 'body',
+            'in' => 'body',
+            'description' => '',
+            'required' => !empty($required),
+            'schema' => $schema,
+        );
+
+        return $ordinary;
+    }
+
+    private function bodySchema($parameter)
+    {
+        return isset($parameter['schema']) && is_array($parameter['schema']) ? $parameter['schema'] : array();
+    }
+
+    /** An object body can absorb inferred form fields; a $ref, allOf, or scalar/array body cannot. */
+    private function bodySchemaIsObjectCompatible($schema)
+    {
+        if (isset($schema['$ref']) || isset($schema['allOf'])) {
+            return false;
+        }
+        return !isset($schema['type']) || 'object' === $schema['type'];
+    }
+
+    /** Merge one object body schema's properties and required list into another. */
+    private function mergeObjectSchema($target, $source)
+    {
+        $target['type'] = 'object';
+        if (!isset($target['properties']) || !is_array($target['properties'])) {
+            $target['properties'] = array();
+        }
+        if (isset($source['properties']) && is_array($source['properties'])) {
+            $target['properties'] += $source['properties'];
+        }
+        $required = isset($target['required']) && is_array($target['required']) ? $target['required'] : array();
+        if (isset($source['required']) && is_array($source['required'])) {
+            $required = array_merge($required, $source['required']);
+        }
+        if (!empty($required)) {
+            $target['required'] = array_values(array_unique($required));
+        }
+        return $target;
+    }
+
+    /** Swagger 2 query/form parameters cannot carry object or reference schemas at any depth. */
+    public function normalizeNonBodyParameter($parameter)
+    {
+        if ($this->schemaIsStructured($parameter)) {
+            $parameter['type'] = 'string';
+            foreach (array('properties', 'objectRequired', 'additionalProperties', 'allOf', '$ref', 'items', 'schema', 'collectionFormat', 'minProperties', 'maxProperties', 'minItems', 'maxItems', 'uniqueItems') as $key) {
+                unset($parameter[$key]);
+            }
+        }
+        // A string parameter cannot carry an array default left over from the downgrade.
+        if (isset($parameter['type']) && 'string' === $parameter['type'] && isset($parameter['default']) && is_array($parameter['default'])) {
+            unset($parameter['default']);
+        }
+        return $parameter;
+    }
+
+    /** A query/form schema is unrepresentable in Swagger 2 if it nests an object or $ref. */
+    private function schemaIsStructured($schema)
+    {
+        if (!is_array($schema)) {
+            return false;
+        }
+        if (isset($schema['$ref']) || isset($schema['properties']) || isset($schema['additionalProperties']) || isset($schema['allOf'])) {
+            return true;
+        }
+        if (isset($schema['type']) && 'object' === $schema['type']) {
+            return true;
+        }
+        if (isset($schema['schema']) && $this->schemaIsStructured($schema['schema'])) {
+            return true;
+        }
+        if (isset($schema['items'])) {
+            return $this->schemaIsStructured($schema['items']);
+        }
+        return false;
+    }
+
+    /** Detect a Swagger 2 `file` type anywhere in a built parameter tree. */
+    private function schemaContainsFile($schema)
+    {
+        if (!is_array($schema)) {
+            return false;
+        }
+        if (isset($schema['type']) && 'file' === $schema['type']) {
+            return true;
+        }
+        foreach (array('items', 'schema', 'additionalProperties') as $key) {
+            if (isset($schema[$key]) && $this->schemaContainsFile($schema[$key])) {
+                return true;
+            }
+        }
+        foreach (array('properties', 'allOf') as $key) {
+            if (isset($schema[$key]) && is_array($schema[$key])) {
+                foreach ($schema[$key] as $sub) {
+                    if ($this->schemaContainsFile($sub)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     public function getParametersFromArgs($endpoint = '', $args = [], $methods = [])
@@ -418,7 +728,7 @@ class WP_API_SwaggerUI
                     $parameters[$mtd] = [];
                 }
 
-                $parameters[$mtd][] = $this->buildParams($param, $mtd, $endpoint, $detail + ['type' => 'string']);
+                $parameters[$mtd][] = $this->buildParams($param, $mtd, $endpoint, $detail);
             }
         }
 
