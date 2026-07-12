@@ -682,21 +682,46 @@ class TestSwaggerUI extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'type', $prop );
 	}
 
-	public function test_file_plus_explicit_body_keeps_body_schema() {
+	public function test_file_plus_explicit_body_flattens_into_multipart() {
 		$operation = $this->ui->getMethodsFromArgs( '/sample', '/wp/v2/sample', array(array(
 			'methods'     => array( 'POST' => true ),
 			'accept_json' => true,
 			'args'        => array(
 				'file' => array( 'type' => 'file' ),
-				'meta' => array( 'in' => 'body', 'schema' => array( 'type' => 'object', 'properties' => array( 'x' => array( 'type' => 'string' ) ) ) ),
+				'meta' => array( 'in' => 'body', 'schema' => array( 'type' => 'object', 'properties' => array( 'x' => array( 'type' => 'string' ) ), 'required' => array( 'x' ) ) ),
 			),
 		)) )['post'];
 
-		$bodies = array_values( array_filter( $operation['parameters'], function ( $p ) {
-			return isset( $p['in'] ) && 'body' === $p['in'];
-		} ) );
-		$this->assertCount( 1, $bodies );
-		$this->assertArrayHasKey( 'x', $bodies[0]['schema']['properties'] );
+		$ins = array_map( function ( $p ) { return $p['in']; }, $operation['parameters'] );
+		$this->assertNotContains( 'body', $ins );
+		$this->assertEquals( array( 'multipart/form-data' ), $operation['consumes'] );
+
+		$by_name = array();
+		foreach ( $operation['parameters'] as $p ) {
+			$by_name[ $p['name'] ] = $p;
+		}
+		$this->assertArrayHasKey( 'file', $by_name );
+		$this->assertArrayHasKey( 'x', $by_name );
+		$this->assertEquals( 'formData', $by_name['x']['in'] );
+		$this->assertTrue( $by_name['x']['required'] );
+	}
+
+	public function test_openapi3_does_not_rewrite_refs_in_examples() {
+		$openapi = ( new Spec30Formatter() )->format(array(
+			'host'     => 'example.org',
+			'basePath' => '/wp-json',
+			'schemes'  => array( 'https' ),
+			'paths'    => array( '/sample' => array( 'get' => array(
+				'produces'  => array( 'application/json' ),
+				'responses' => array( '200' => array(
+					'description' => 'OK',
+					'examples'    => array( 'application/json' => array( '$ref' => '#/definitions/Thing' ) ),
+				) ),
+			) ) ),
+		));
+
+		$example = $openapi['paths']['/sample']['get']['responses']['200']['content']['application/json']['example'];
+		$this->assertEquals( '#/definitions/Thing', $example['$ref'] );
 	}
 
 	public function test_buildParameters() {

@@ -53,6 +53,10 @@ class Spec30Formatter implements SwaggerSpecFormatter {
 	private function rewriteRefs(array $data): array {
 		$prefix = '#/definitions/';
 		foreach ( $data as $key => $value ) {
+			// Do not touch literal payload data; only schema-bearing locations carry real $refs.
+			if ( 'example' === $key || 'examples' === $key ) {
+				continue;
+			}
 			if ( '$ref' === $key && is_string( $value ) && 0 === strpos( $value, $prefix ) ) {
 				$data[ $key ] = '#/components/schemas/' . substr( $value, strlen( $prefix ) );
 			} elseif ( is_array( $value ) ) {

@@ -266,14 +266,28 @@ class WP_API_SwaggerUI
                 $wants_json = in_array('application/json', $consumes, true);
 
                 if ($has_file) {
-                    // Swagger 2 file parameters are valid only under multipart/form-data.
+                    // Swagger 2 file parameters are valid only under multipart/form-data, and a
+                    // body parameter cannot coexist with formData. Flatten an explicit object body
+                    // into individual multipart fields and drop the body parameter.
                     $consumes = ['multipart/form-data'];
-                    foreach ($parameters as $index => $parameter) {
-                        // Leave an explicit body schema intact; only downgrade non-body params.
-                        if (!isset($parameter['in']) || 'body' !== $parameter['in']) {
-                            $parameters[$index] = $this->normalizeNonBodyParameter($parameter);
+                    $flattened = array();
+                    foreach ($parameters as $parameter) {
+                        if (isset($parameter['in']) && 'body' === $parameter['in']) {
+                            $schema = isset($parameter['schema']) && is_array($parameter['schema']) ? $parameter['schema'] : array();
+                            $props = isset($schema['properties']) && is_array($schema['properties']) ? $schema['properties'] : array();
+                            $body_required = isset($schema['required']) && is_array($schema['required']) ? $schema['required'] : array();
+                            foreach ($props as $name => $property) {
+                                $field = is_array($property) ? $property : array();
+                                $field['name'] = $name;
+                                $field['in'] = 'formData';
+                                $field['required'] = in_array($name, $body_required, true);
+                                $flattened[] = $this->normalizeNonBodyParameter($field);
+                            }
+                            continue;
                         }
+                        $flattened[] = $this->normalizeNonBodyParameter($parameter);
                     }
+                    $parameters = $flattened;
                 } elseif ($wants_json || $has_explicit_body) {
                     // Consolidate form fields into the single body parameter Swagger 2 allows.
                     $parameters = $this->buildJsonBodyParameter($parameters);
